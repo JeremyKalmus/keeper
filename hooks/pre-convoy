@@ -1,0 +1,242 @@
+#!/bin/bash
+# hooks/pre-convoy - Pre-convoy gate hook for Keeper of the Seeds
+#
+# This hook gates convoy creation by checking for keeper_decision approval.
+# Exit 0 to allow convoy creation, non-zero to block.
+#
+# Usage:
+#   Called by `gt convoy create` before creating a convoy.
+#   The hook receives convoy context via environment variables.
+#
+# Environment variables (set by gt convoy create):
+#   GT_CONVOY_NAME     - Name of the convoy being created
+#   GT_CONVOY_ISSUES   - Space-separated list of issue IDs to track
+#   GT_RIG_ROOT        - Path to the rig root directory
+#   GT_TOWN_ROOT       - Path to the town root directory
+#
+# Exit codes:
+#   0 - Convoy creation approved
+#   1 - No keeper_decision found (gate blocked)
+#   2 - Keeper decision status is not 'approved'
+#   3 - Invalid or unparseable keeper_decision
+#
+# The Keeper of the Seeds must approve work before polecats are unleashed.
+# "No Keeper, no convoy. No seeds, no Keeper." - keeper-spec.md
+
+set -euo pipefail
+
+# Configuration
+DECISION_FILE="${GT_KEEPER_DECISION:-keeper_decision.yaml}"
+DECISIONS_DIR="${GT_RIG_ROOT:-$(pwd)}/decisions"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log_error() {
+    echo -e "${RED}[pre-convoy] ERROR: $1${NC}" >&2
+}
+
+log_warn() {
+    echo -e "${YELLOW}[pre-convoy] WARNING: $1${NC}" >&2
+}
+
+log_success() {
+    echo -e "${GREEN}[pre-convoy] $1${NC}"
+}
+
+log_info() {
+    echo "[pre-convoy] $1"
+}
+
+# Find the keeper_decision file
+find_decision_file() {
+    local search_paths=(
+        # 1. Explicit path from environment
+        "${GT_KEEPER_DECISION:-}"
+        # 2. Current directory
+        "${DECISION_FILE}"
+        # 3. Rig decisions directory
+        "${DECISIONS_DIR}/${DECISION_FILE}"
+        "${DECISIONS_DIR}/latest.yaml"
+        # 4. Rig root
+        "${GT_RIG_ROOT:-$(pwd)}/${DECISION_FILE}"
+        "${GT_RIG_ROOT:-$(pwd)}/keeper_decision.yaml"
+    )
+
+    for path in "${search_paths[@]}"; do
+        if [[ -n "$path" && -f "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Parse YAML and extract status (simple grep-based, no external deps)
+# Expects format:
+#   keeper_decision:
+#     status: approved
+#
+# Or simpler:
+#   status: approved
+parse_decision_status() {
+    local file="$1"
+    local status
+
+    # Try to extract status from YAML
+    # Handle both "status: value" and "  status: value" (indented)
+    status=$(grep -E '^\s*status:\s*' "$file" | head -1 | sed 's/.*status:\s*//' | tr -d '[:space:]"'"'" | tr '[:upper:]' '[:lower:]')
+
+    if [[ -z "$status" ]]; then
+        return 1
+    fi
+
+    echo "$status"
+    return 0
+}
+
+# Check if keeper is in seeding mode (bypass strict checks)
+check_keeper_mode() {
+    local keeper_config="${GT_RIG_ROOT:-$(pwd)}/keeper.yaml"
+
+    if [[ -f "$keeper_config" ]]; then
+        local mode
+        mode=$(grep -E '^\s*mode:\s*' "$keeper_config" 2>/dev/null | head -1 | sed 's/.*mode:\s*//' | tr -d '[:space:]"'"'" | tr '[:upper:]' '[:lower:]')
+        echo "${mode:-growth}"
+    else
+        echo "growth"
+    fi
+}
+
+# Main gate logic
+main() {
+    log_info "Checking Keeper of the Seeds approval..."
+
+    # Check keeper mode
+    local keeper_mode
+    keeper_mode=$(check_keeper_mode)
+
+    if [[ "$keeper_mode" == "seeding" ]]; then
+        log_warn "Keeper in SEEDING mode - convoy creation allowed without explicit approval"
+        log_success "Convoy gate PASSED (seeding mode bypass)"
+        exit 0
+    fi
+
+    # Find decision file
+    local decision_file
+    if ! decision_file=$(find_decision_file); then
+        log_error "No keeper_decision found!"
+        log_info "The Keeper of the Seeds must approve work before convoy creation."
+        log_info ""
+        log_info "Expected locations:"
+        log_info "  - ${DECISIONS_DIR}/${DECISION_FILE}"
+        log_info "  - ${GT_RIG_ROOT:-$(pwd)}/keeper_decision.yaml"
+        log_info ""
+        log_info "Create a keeper_decision with:"
+        log_info "  keeper_decision:"
+        log_info "    status: approved"
+        log_info "    reuse: [...]"
+        exit 1
+    fi
+
+    log_info "Found decision file: $decision_file"
+
+    # Parse status
+    local status
+    if ! status=$(parse_decision_status "$decision_file"); then
+        log_error "Could not parse keeper_decision status from: $decision_file"
+        log_info "Expected format:"
+        log_info "  keeper_decision:"
+        log_info "    status: approved|rejected|deferred"
+        exit 3
+    fi
+
+    log_info "Keeper decision status: $status"
+
+    # Check status
+    case "$status" in
+        approved)
+            log_success "Convoy gate PASSED - Keeper has approved this work"
+            exit 0
+            ;;
+        rejected)
+            log_error "Convoy gate BLOCKED - Keeper has REJECTED this work"
+            log_info "Review the keeper_decision for rejection reason."
+            exit 2
+            ;;
+        deferred)
+            log_error "Convoy gate BLOCKED - Keeper decision is DEFERRED"
+            log_info "Work requires further review before convoy can launch."
+            exit 2
+            ;;
+        *)
+            log_error "Unknown keeper_decision status: $status"
+            log_info "Valid statuses: approved, rejected, deferred"
+            exit 3
+            ;;
+    esac
+}
+
+# Support --help flag
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+pre-convoy - Keeper of the Seeds gate hook
+
+This hook gates convoy creation by checking for keeper_decision approval.
+It enforces the rule: "No Keeper, no convoy."
+
+USAGE:
+    hooks/pre-convoy [--help]
+
+ENVIRONMENT VARIABLES:
+    GT_CONVOY_NAME      Name of the convoy being created
+    GT_CONVOY_ISSUES    Space-separated list of issue IDs
+    GT_RIG_ROOT         Path to the rig root directory
+    GT_TOWN_ROOT        Path to the town root directory
+    GT_KEEPER_DECISION  Override path to keeper_decision file
+
+EXIT CODES:
+    0 - Approved (convoy may proceed)
+    1 - No decision found (blocked)
+    2 - Decision status not approved (blocked)
+    3 - Parse error (blocked)
+
+DECISION FILE FORMAT:
+    keeper_decision:
+      status: approved
+      reuse:
+        frontend:
+          - Button.primary
+        backend:
+          - AuthService
+      extensions: [...]
+      new_seeds: [...]
+      forbidden: [...]
+
+KEEPER MODES:
+    seeding     - Early project: bypasses strict approval
+    growth      - Default: requires approval
+    conservation - Mature: very strict approval
+
+EXAMPLE INTEGRATION:
+    # In gt convoy create (pseudo-code):
+    export GT_CONVOY_NAME="$convoy_name"
+    export GT_CONVOY_ISSUES="$issues"
+    export GT_RIG_ROOT="$rig_root"
+
+    if ! hooks/pre-convoy; then
+        echo "Convoy blocked by Keeper gate"
+        exit 1
+    fi
+
+SEE ALSO:
+    keeper-spec.md - Full Keeper of the Seeds specification
+EOF
+    exit 0
+fi
+
+main "$@"
