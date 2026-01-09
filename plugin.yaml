@@ -32,6 +32,9 @@ install:
     PreConvoy:
       - command: "./hooks/pre-convoy"
         matcher: ""
+    PostBeadCreate:
+      - command: "./hooks/post-bead-create"
+        matcher: ""
 
 # Cleanup on uninstall
 uninstall:
