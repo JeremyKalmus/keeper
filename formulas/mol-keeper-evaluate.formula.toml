@@ -1,0 +1,198 @@
+description = """
+Keeper of the Seeds evaluation molecule.
+
+The Keeper evaluates proposed work against the rig's seed vault and produces
+a binding keeper_decision.yaml that gates convoy creation.
+
+## When to Use
+
+The Mayor invokes this molecule BEFORE creating implementation beads:
+1. Mayor receives spec/proposal
+2. Mayor calls: gt sling mol-keeper-evaluate <rig> --var proposal="<description>"
+3. Keeper agent evaluates against seeds
+4. Keeper outputs decisions/keeper_decision.yaml
+5. If approved: Mayor creates implementation beads
+6. If rejected: Mayor reports back, requests spec changes
+
+## Flow
+
+```
+Proposal → Keeper Agent → keeper_decision.yaml
+                          ↓
+                    pre-convoy hook validates
+                          ↓
+                    Convoy launches
+```
+
+## Input
+
+The molecule expects:
+- proposal: Description of the work being proposed
+- rig: The rig where work will happen (seeds loaded from here)
+
+## Output
+
+decisions/keeper_decision.yaml with:
+- status: approved | rejected | deferred
+- reuse: existing patterns to use
+- extensions: modifications to existing patterns
+- new_seeds: new patterns (rare, requires justification)
+- forbidden: what must not be done
+- rationale: explanation of decision
+"""
+formula = "mol-keeper-evaluate"
+version = 1
+
+[vars]
+proposal = { required = true, description = "Description of the proposed work" }
+
+[[steps]]
+id = "load-context"
+title = "Load keeper context"
+description = """
+Load the rig's seeds and keeper configuration.
+
+**Step 1: Read keeper.yaml**
+```bash
+cat keeper.yaml
+```
+Note the mode (seeding/growth/conservation).
+
+**Step 2: Read all seeds**
+```bash
+cat seeds/frontend.yaml
+cat seeds/backend.yaml
+cat seeds/data.yaml
+cat seeds/auth.yaml
+```
+
+**Step 3: Check for existing decisions**
+```bash
+ls -la decisions/
+cat decisions/keeper_decision.yaml 2>/dev/null || echo "No existing decision"
+```
+
+Store this context for the evaluation step."""
+
+[[steps]]
+id = "analyze-proposal"
+title = "Analyze the proposal"
+needs = ["load-context"]
+description = """
+Analyze the proposal against the seed vault.
+
+Read the proposal from the `proposal` variable passed to the molecule.
+
+**Four Questions:**
+1. What already exists? (Check seeds for matching patterns)
+2. Is it sufficient? (Does existing pattern cover the use case?)
+3. If not, what is the smallest extension?
+4. If a new seed is required, how is it preserved?
+
+**Apply Decision Matrices:**
+
+For Frontend Components:
+- Component exists? → Use it
+- Variant fits? → Use variant
+- Extension breaks design system? → REJECT
+
+For Backend Routes:
+- Route exists with same resource? → Extend
+- Backward-compatible? → Modify
+- REST shape valid? → Approve
+
+For Database/Enums:
+- Enum exists? → Extend
+- Append-only extension? → OK
+- Requires migration? → BLOCK
+
+For Auth:
+- Auth service exists? → Use it
+- New permission? → Add scope only
+- Token shape consistent? → Proceed
+
+**Mode considerations:**
+- seeding: Allow new seeds, warn but don't block
+- growth: Reuse-first, extension preferred, new seeds gated
+- conservation: New seeds almost always rejected
+
+Document your analysis for each category that applies."""
+
+[[steps]]
+id = "write-decision"
+title = "Write keeper_decision.yaml"
+needs = ["analyze-proposal"]
+description = """
+Produce the binding keeper decision.
+
+**Create decisions directory if needed:**
+```bash
+mkdir -p decisions
+```
+
+**Write the decision:**
+```bash
+cat > decisions/keeper_decision.yaml << 'EOF'
+keeper_decision:
+  status: approved  # or: rejected, deferred
+  reuse:
+    frontend:
+      - <patterns to reuse>
+    backend:
+      - <patterns to reuse>
+    data:
+      - <patterns to reuse>
+  extensions:
+    # Only if needed
+  new_seeds: []
+    # Only if truly necessary, with justification
+  forbidden:
+    - <patterns that must NOT be created>
+  rationale: |
+    <explanation of the decision>
+EOF
+```
+
+**Status values:**
+- approved: Proceed with work using specified patterns
+- rejected: Work cannot proceed. Reasons in rationale.
+- deferred: Need more information or human decision
+
+**Critical:** This decision is BINDING. The pre-convoy hook validates it.
+If status is not 'approved', the convoy cannot launch.
+
+**After writing:**
+```bash
+cat decisions/keeper_decision.yaml
+```
+Confirm the decision is valid YAML and complete."""
+
+[[steps]]
+id = "report-decision"
+title = "Report decision to Mayor"
+needs = ["write-decision"]
+description = """
+Report the decision to the Mayor.
+
+**Send mail notification:**
+```bash
+gt mail send mayor/ -s "Keeper Decision: <status>" \\
+  -m "Proposal: <brief summary>
+
+Status: <approved|rejected|deferred>
+
+Reuse patterns: <count>
+Extensions: <count>
+New seeds: <count>
+Forbidden: <list>
+
+Rationale: <brief explanation>
+
+Decision file: decisions/keeper_decision.yaml"
+```
+
+**If rejected or deferred:**
+Include specific guidance on what needs to change for approval.
+
+**If approved:**
+Confirm the proposal can proceed and list any key constraints."""

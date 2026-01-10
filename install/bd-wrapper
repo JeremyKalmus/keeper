@@ -2,9 +2,11 @@
 # bd wrapper - Intercepts bd commands to invoke Gas Town plugin hooks
 #
 # This wraps the real bd binary to:
-# 1. Call PreBeadCreate GATE (can reject)
-# 2. If allowed, call real bd
-# 3. Call PostBeadCreate (add guidance)
+# 1. Call real bd
+# 2. Call PostBeadCreate hook (advisory guidance)
+#
+# NOTE: Keeper validation happens BEFORE beads are created via the
+# mol-keeper-evaluate agent. The pre-convoy hook gates convoy creation.
 
 set -euo pipefail
 
@@ -125,35 +127,11 @@ if [[ -n "$GT_TOWN_ROOT" ]]; then
 fi
 
 # ============================================
-# GATE: Call PreBeadCreate hook (can reject)
+# Create the bead
 # ============================================
-PRE_HOOK=""
-for hook_path in \
-    "${GT_TOWN_ROOT}/plugins/keeper/hooks/pre-bead-create" \
-    "${GT_RIG_ROOT}/hooks/pre-bead-create" \
-    "${HOME}/.keeper/hooks/pre-bead-create"; do
-    if [[ -x "$hook_path" ]]; then
-        PRE_HOOK="$hook_path"
-        break
-    fi
-done
-
-if [[ -n "$PRE_HOOK" && -n "$GT_TOWN_ROOT" ]]; then
-    # Call the gate - if it exits non-zero, we stop here
-    if ! BD_BEAD_TITLE="$TITLE" \
-         BD_BEAD_DESCRIPTION="$DESC" \
-         BD_BEAD_TYPE="$TYPE" \
-         GT_TOWN_ROOT="$GT_TOWN_ROOT" \
-         GT_RIG_ROOT="$GT_RIG_ROOT" \
-         "$PRE_HOOK"; then
-        # Gate rejected - do NOT create the bead
-        exit 1
-    fi
-fi
-
-# ============================================
-# Gate passed - create the bead
-# ============================================
+# NOTE: Keeper validation happens BEFORE beads are created via the
+# mol-keeper-evaluate agent, NOT at bd create time. The pre-convoy
+# hook validates that keeper_decision.yaml exists and is approved.
 OUTPUT=$("$BD_REAL" "$@" 2>&1) || {
     RC=$?
     echo "$OUTPUT"
