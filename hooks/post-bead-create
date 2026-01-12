@@ -260,9 +260,15 @@ append_to_bead() {
     local bead_id="$1"
     local guidance="$2"
 
-    # Get current description
+    # Get current description using jq for proper JSON array parsing
     local current_desc
-    current_desc=$(bd show "$bead_id" --format=json 2>/dev/null | grep -o '"description":"[^"]*"' | sed 's/"description":"\(.*\)"/\1/' || echo "")
+    current_desc=$(bd show "$bead_id" --json 2>/dev/null | jq -r '.[0].description // empty')
+
+    # Skip if work order already present (YAML frontmatter)
+    if [[ "$current_desc" == "---"* ]]; then
+        log_info "Work order detected in bead ${bead_id}, skipping guidance"
+        return 0
+    fi
 
     # Append guidance (use bd update with appended description)
     local new_desc="${current_desc}
