@@ -13,6 +13,11 @@ requires: []
 
 # Installation
 install:
+  # Run setup script first to install bd-wrapper
+  scripts:
+    - command: "./install/setup.sh"
+      description: "Install bd wrapper for PostBeadCreate hooks"
+
   templates:
     - source: templates/keeper.yaml
       dest: keeper.yaml

@@ -12,34 +12,53 @@ KEEPER_ROOT="$(dirname "$SCRIPT_DIR")"
 echo "🌱 Keeper of the Seeds - Installation"
 echo ""
 
-# Find a suitable PATH location
+# Find a suitable PATH location that comes before /opt/homebrew/bin
 INSTALL_DIR=""
-for dir in "$HOME/.local/bin" "$HOME/bin" "$HOME/.amp/bin"; do
-    if [[ -d "$dir" ]] || mkdir -p "$dir" 2>/dev/null; then
-        # Check if this dir is in PATH and comes before homebrew
-        if echo "$PATH" | tr ':' '\n' | grep -q "^$dir$"; then
-            # Check if it comes before /opt/homebrew/bin
-            BEFORE_HOMEBREW=$(echo "$PATH" | tr ':' '\n' | grep -nE "^($dir|/opt/homebrew/bin)$" | head -1 | cut -d: -f2)
-            if [[ "$BEFORE_HOMEBREW" == "$dir" ]]; then
-                INSTALL_DIR="$dir"
-                break
-            fi
-        fi
+HOMEBREW_POS=999
+
+# Find position of /opt/homebrew/bin in PATH
+i=0
+IFS=':' read -ra PATH_DIRS <<< "$PATH"
+for dir in "${PATH_DIRS[@]}"; do
+    if [[ "$dir" == "/opt/homebrew/bin" ]]; then
+        HOMEBREW_POS=$i
+        break
     fi
+    ((i++))
+done
+
+# Find first candidate directory that comes before homebrew
+i=0
+for dir in "${PATH_DIRS[@]}"; do
+    if [[ $i -ge $HOMEBREW_POS ]]; then
+        break
+    fi
+    # Check if this is a candidate directory we want to use
+    case "$dir" in
+        "$HOME/.local/bin"|"$HOME/bin"|"$HOME/.amp/bin")
+            INSTALL_DIR="$dir"
+            break
+            ;;
+    esac
+    ((i++))
 done
 
 if [[ -z "$INSTALL_DIR" ]]; then
-    # Fallback - create ~/.local/bin and warn about PATH
+    # Fallback - use ~/.local/bin
     INSTALL_DIR="$HOME/.local/bin"
-    mkdir -p "$INSTALL_DIR"
     echo "⚠️  Warning: $INSTALL_DIR may not be in your PATH before /opt/homebrew/bin"
     echo "   Add this to your shell profile:"
     echo "   export PATH=\"$INSTALL_DIR:\$PATH\""
     echo ""
 fi
 
+# Ensure install directory exists
+mkdir -p "$INSTALL_DIR"
+
 # Install the bd wrapper
 echo "📦 Installing bd wrapper to $INSTALL_DIR..."
+# Remove any existing bd (might be symlink or old version)
+rm -f "$INSTALL_DIR/bd"
 cp "$SCRIPT_DIR/bd-wrapper" "$INSTALL_DIR/bd"
 chmod +x "$INSTALL_DIR/bd"
 
