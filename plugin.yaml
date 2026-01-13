@@ -1,6 +1,6 @@
 # Keeper of the Seeds - Gas Town Plugin Manifest
 name: keeper
-version: 1.1.0
+version: 1.2.0
 description: |
   Governance plugin for architectural consistency. Prevents drift by enforcing
   reuse over creation through a dual-gate system:
@@ -39,11 +39,18 @@ install:
     - keeper/seeds/backend.yaml
     - keeper/seeds/data.yaml
     - keeper/seeds/auth.yaml
+    - keeper/seeds/config.yaml
+    - keeper/seeds/testing.yaml
     - keeper/decisions/
+    - keeper/hooks/keeper-gate.sh
     - keeper/KEEPER-INSTRUCTIONS.md
 
   # Slash commands installed
   commands:
+    - source: commands/keeper-plant.md
+      targets:
+        - mayor/.claude/commands/
+        - .claude/commands/
     - source: commands/keeper-review.md
       targets:
         - mayor/.claude/commands/
@@ -68,6 +75,12 @@ uninstall:
 
 # Slash commands provided
 commands:
+  keeper-plant:
+    description: "Discover existing patterns and populate Seed Vault (run once after install)"
+    usage: "/keeper-plant [--mode seeding|growth]"
+    for: [mayor, crew]
+    file: commands/keeper-plant.md
+
   keeper-review:
     description: "Review spec against Seed Vault before creating beads"
     usage: "/keeper-review <spec-file-or-description>"

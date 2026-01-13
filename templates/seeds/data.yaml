@@ -64,3 +64,75 @@ tables:
     indexes: [user_id, sent_at, channel]
     constraints:
       - cascade delete with user
+
+validation_schemas:
+  # Zod/Yup/Joi validation schemas
+  # Prevents duplicate validation logic and inconsistent rules
+  #
+  # SchemaName:
+  #   location: path/to/schema.ts
+  #   validates: "what data shape this validates"
+  #   used_by: [list of consumers]
+
+  UserCreateInput:
+    location: src/schemas/user.ts
+    validates: "POST /users request body"
+    fields:
+      - email: "email format, required"
+      - password: "min 8 chars, required"
+      - name: "string, optional"
+    used_by: [UserService, UserController]
+
+  UserUpdateInput:
+    location: src/schemas/user.ts
+    validates: "PATCH /users/:id request body"
+    fields:
+      - email: "email format, optional"
+      - name: "string, optional"
+    used_by: [UserService, UserController]
+
+  LoginInput:
+    location: src/schemas/auth.ts
+    validates: "POST /auth/login request body"
+    fields:
+      - email: "email format, required"
+      - password: "string, required"
+    used_by: [AuthService, AuthController]
+
+  # Forbidden patterns for validation:
+  forbidden_patterns:
+    - inline validation without schema
+    - duplicate schemas for same data shape
+    - validation in controllers (use middleware)
+    - custom regex without documentation
+
+type_aliases:
+  # Shared TypeScript type aliases
+  # Prevents inconsistent type definitions
+  #
+  # TypeName:
+  #   definition: "type definition"
+  #   location: path/to/types.ts
+  #   used_for: "description"
+
+  UserId:
+    definition: "string (UUID)"
+    location: src/types/ids.ts
+    used_for: "All user ID references"
+
+  Timestamp:
+    definition: "string (ISO 8601)"
+    location: src/types/common.ts
+    used_for: "All datetime fields"
+
+  Email:
+    definition: "string (validated email)"
+    location: src/types/common.ts
+    used_for: "All email fields"
+
+  # Forbidden patterns for types:
+  forbidden_patterns:
+    - using `any` type
+    - inline type definitions for shared shapes
+    - number for IDs (use string UUID)
+    - Date objects in API payloads (use ISO string)

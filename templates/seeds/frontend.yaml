@@ -42,3 +42,102 @@ components:
     forbidden_extensions:
       - custom border styles
       - mixed variant nesting
+
+hooks:
+  # Custom React hooks registry
+  # HookName:
+  #   location: path/to/useHook.ts
+  #   purpose: "What this hook provides"
+  #   returns: [type description]
+  #   forbidden_patterns:
+  #     - anti-patterns to avoid
+
+  useAuth:
+    location: src/hooks/useAuth.ts
+    purpose: "Access current user auth state"
+    returns: "{ user, isAuthenticated, isLoading }"
+    forbidden_patterns:
+      - storing tokens in hook state
+      - exposing raw token to components
+
+  useLocalStorage:
+    location: src/hooks/useLocalStorage.ts
+    purpose: "Persistent state in localStorage"
+    returns: "[value, setValue]"
+    forbidden_patterns:
+      - storing sensitive data
+      - storing auth tokens
+
+state_stores:
+  # State management patterns (Redux, Zustand, Context)
+  # StoreName:
+  #   type: redux|zustand|context
+  #   location: path/to/store.ts
+  #   purpose: "What state this manages"
+  #   forbidden_patterns:
+  #     - anti-patterns to avoid
+
+  # Example:
+  # userStore:
+  #   type: zustand
+  #   location: src/stores/userStore.ts
+  #   purpose: "Current user state and preferences"
+  #   forbidden_patterns:
+  #     - storing auth tokens
+  #     - direct API calls (use services)
+
+i18n_keys:
+  # Internationalization key namespaces
+  # Prevent duplicate/inconsistent translation keys
+  #
+  # namespace:
+  #   prefix: "key.prefix"
+  #   location: path/to/translations
+  #   owner: "team or feature owning this namespace"
+
+  common:
+    prefix: "common."
+    location: src/i18n/common/
+    owner: "design-system"
+    keys:
+      - common.save
+      - common.cancel
+      - common.loading
+      - common.error
+
+  auth:
+    prefix: "auth."
+    location: src/i18n/auth/
+    owner: "auth-team"
+
+  # Forbidden patterns for i18n:
+  forbidden_patterns:
+    - hardcoded strings in components
+    - inline template literals for user-facing text
+    - duplicate keys across namespaces
+
+design_tokens:
+  # Design system tokens (colors, spacing, typography)
+  # location: path/to/tokens
+  # format: css-vars|tailwind|styled-components
+
+  location: src/ui/tokens/
+  format: css-vars
+
+  colors:
+    # Only these color tokens are approved
+    primary: "--color-primary"
+    secondary: "--color-secondary"
+    danger: "--color-danger"
+    success: "--color-success"
+    warning: "--color-warning"
+
+  spacing:
+    # Approved spacing scale
+    values: [0, 1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64]
+    unit: "rem/16"
+
+  forbidden_patterns:
+    - arbitrary color values
+    - magic number spacing
+    - custom font families

@@ -1,0 +1,153 @@
+# Testing Seed Registry
+# Machine-readable registry of test patterns, fixtures, and utilities
+# Keeper uses this to enforce consistent testing practices
+
+test_fixtures:
+  # Shared test data factories
+  # Prevents duplicate fixture creation and inconsistent test data
+  #
+  # FixtureName:
+  #   location: path/to/fixture.ts
+  #   creates: "what entity this fixture creates"
+  #   variants: [list of preset variations]
+  #   dependencies: [other fixtures it uses]
+
+  UserFixture:
+    location: tests/fixtures/user.ts
+    creates: "User entity with sensible defaults"
+    variants: [admin, regular, guest, suspended]
+    dependencies: []
+
+  AuthFixture:
+    location: tests/fixtures/auth.ts
+    creates: "Authenticated session/tokens"
+    variants: [valid_session, expired_session, invalid_token]
+    dependencies: [UserFixture]
+
+  # Forbidden patterns for fixtures:
+  forbidden_patterns:
+    - inline test data without factory
+    - random data without seeding
+    - fixtures that hit real services
+    - hardcoded IDs in tests
+
+mock_services:
+  # Service mocks and stubs
+  # Ensures consistent mocking patterns
+  #
+  # MockName:
+  #   location: path/to/mock.ts
+  #   mocks: "service or module being mocked"
+  #   default_behavior: "what it returns by default"
+
+  MockAuthService:
+    location: tests/mocks/auth.ts
+    mocks: AuthService
+    default_behavior: "Returns valid user, no network calls"
+
+  MockDatabaseClient:
+    location: tests/mocks/database.ts
+    mocks: Database connection
+    default_behavior: "In-memory store, auto-reset"
+
+  MockHttpClient:
+    location: tests/mocks/http.ts
+    mocks: External HTTP calls
+    default_behavior: "Returns 200 with empty body"
+
+  # Forbidden patterns for mocks:
+  forbidden_patterns:
+    - mocking internals (only mock boundaries)
+    - mocks that leak state between tests
+    - mocks without reset capability
+    - production code that checks for test environment
+
+test_utilities:
+  # Shared test helpers
+  # Utility functions used across test suites
+  #
+  # UtilityName:
+  #   location: path/to/utility.ts
+  #   purpose: "what this helper does"
+  #   used_in: [unit|integration|e2e]
+
+  setupTestDatabase:
+    location: tests/utils/database.ts
+    purpose: "Initialize clean test database"
+    used_in: [integration]
+
+  createAuthenticatedClient:
+    location: tests/utils/auth.ts
+    purpose: "Create API client with valid auth"
+    used_in: [integration, e2e]
+
+  waitForCondition:
+    location: tests/utils/async.ts
+    purpose: "Poll until condition is true"
+    used_in: [integration, e2e]
+
+  # Forbidden patterns for utilities:
+  forbidden_patterns:
+    - test helpers with side effects
+    - utilities that depend on test order
+    - shared mutable state across tests
+
+test_structure:
+  # Test organization patterns
+  # How tests should be organized and named
+  #
+  # test_type:
+  #   location: path/pattern
+  #   naming: "file naming convention"
+  #   runs_in: "ci stage"
+
+  unit:
+    location: "**/*.test.ts (colocated)"
+    naming: "{module}.test.ts"
+    runs_in: "pre-commit, ci"
+    timeout: 5000
+
+  integration:
+    location: "tests/integration/**/*.test.ts"
+    naming: "{feature}.integration.test.ts"
+    runs_in: "ci"
+    timeout: 30000
+
+  e2e:
+    location: "tests/e2e/**/*.test.ts"
+    naming: "{flow}.e2e.test.ts"
+    runs_in: "ci-nightly, pre-deploy"
+    timeout: 60000
+
+  # Forbidden patterns for test structure:
+  forbidden_patterns:
+    - tests outside designated directories
+    - e2e tests that run on every commit
+    - tests without timeout
+    - tests that require specific execution order
+
+coverage_requirements:
+  # Code coverage standards
+  # Minimum coverage thresholds by area
+  #
+  # area:
+  #   line: percentage
+  #   branch: percentage
+  #   function: percentage
+
+  global:
+    line: 80
+    branch: 70
+    function: 80
+
+  critical_paths:
+    # Auth, payments, etc.
+    line: 95
+    branch: 90
+    function: 95
+
+  # Forbidden patterns for coverage:
+  forbidden_patterns:
+    - istanbul ignore without justification
+    - tests that only exist for coverage
+    - coverage decreasing on PR

@@ -39,10 +39,12 @@ This transforms architecture from culture into infrastructure.
 ├── keeper/
 │   ├── keeper.yaml           # Configuration
 │   ├── seeds/
-│   │   ├── frontend.yaml     # UI component registry
-│   │   ├── backend.yaml      # API routes registry
-│   │   ├── data.yaml         # Schema registry
-│   │   └── auth.yaml         # Auth patterns registry
+│   │   ├── frontend.yaml     # UI components, hooks, i18n, design tokens
+│   │   ├── backend.yaml      # API routes, services, errors, events
+│   │   ├── data.yaml         # Tables, enums, validation schemas
+│   │   ├── auth.yaml         # Auth patterns, scopes, roles
+│   │   ├── config.yaml       # Feature flags, environment config
+│   │   └── testing.yaml      # Test fixtures, mocks, utilities
 │   ├── decisions/            # ADR storage
 │   └── KEEPER-INSTRUCTIONS.md
 └── .claude/commands/
@@ -92,11 +94,15 @@ Discovered Patterns:
 
 | Category | Patterns Found |
 |----------|---------------|
-| **Frontend** | React/Vue/Svelte components, custom hooks, design tokens |
-| **Backend** | REST routes, GraphQL schemas, services, utilities |
-| **Data** | Database tables, enums, validation schemas (Zod/Yup) |
-| **Auth** | Auth type (JWT/session), scopes, roles, permissions |
-| **State** | Redux stores, Zustand, Context providers |
+| **Frontend** | Components, custom hooks, state stores, i18n keys, design tokens |
+| **Backend** | REST routes, services, error types, logging patterns, event schemas |
+| **Data** | Database tables, enums, validation schemas (Zod/Yup), type aliases |
+| **Auth** | Auth type (JWT/session), scopes, roles, token shapes |
+| **Config** | Feature flags, environment variables, config files |
+| **Testing** | Test fixtures, mock services, test utilities, coverage config |
+
+Discovery uses **parallel sub-agents** (one per category) to handle large codebases
+without context overflow.
 
 ### After Discovery
 
@@ -233,6 +239,38 @@ auth_model:
 scopes:
   user:read:
     granted_to: [user, admin]
+```
+
+### config.yaml
+```yaml
+feature_flags:
+  new_dashboard:
+    description: "Enable redesigned dashboard"
+    default: false
+    rollout: percentage
+    owner: "frontend-team"
+    lifecycle: experimental
+
+environment_vars:
+  DATABASE_URL:
+    required: true
+    sensitive: true
+    used_by: [api, worker]
+```
+
+### testing.yaml
+```yaml
+test_fixtures:
+  UserFixture:
+    location: tests/fixtures/user.ts
+    creates: "User entity with sensible defaults"
+    variants: [admin, regular, guest]
+
+mock_services:
+  MockAuthService:
+    location: tests/mocks/auth.ts
+    mocks: AuthService
+    default_behavior: "Returns valid user"
 ```
 
 ## Decision Matrix

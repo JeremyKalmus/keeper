@@ -1,6 +1,6 @@
 ---
 description: Discover existing patterns and populate the Seed Vault (run once after install)
-allowed-tools: Read,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*)
+allowed-tools: Read,Write,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Task
 argument-hint: [--mode seeding|growth]
 ---
 
@@ -17,7 +17,6 @@ Run this once after installing Keeper on a rig.
 
 Find the source code root:
 ```bash
-# Look for common source directories
 ls -d src/ app/ lib/ packages/ 2>/dev/null | head -1
 ```
 
@@ -27,242 +26,140 @@ If not found, use current directory.
 
 If `--mode` specified in arguments, note it. Otherwise default to `seeding` for new discovery.
 
-## Step 3: Discover Frontend Components
+## Step 3: Launch Parallel Discovery Agents
 
-### 3A. Find React Components
-```bash
-find . -type f \( -name "*.tsx" -o -name "*.jsx" \) | grep -iE "(component|ui|shared)" | head -50
+**CRITICAL**: To handle large codebases without context overflow, you MUST spawn 6 parallel
+sub-agents using the Task tool. Each agent discovers patterns for one seed category.
+
+Launch ALL of these agents in a SINGLE message with multiple Task tool calls:
+
+### Agent 1: Frontend Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover frontend patterns in this codebase for the Keeper Seed Vault.
+
+Find and document:
+1. **Components**: React/Vue/Svelte components in ui/, components/, shared/ directories
+   - Component names, variants, props, locations
+2. **Hooks**: Custom hooks (use*.ts files)
+   - Hook names, purpose, return types
+3. **State Stores**: Redux slices, Zustand stores, Context providers
+   - Store names, what state they manage
+4. **i18n Keys**: Translation key namespaces and locations
+5. **Design Tokens**: Theme files, CSS variables, Tailwind config
+
+Output as YAML format matching keeper/seeds/frontend.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-For each component file found, extract:
-- Component name (from filename or export)
-- Props/variants (look for type definitions)
-- Location (file path)
+### Agent 2: Backend Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover backend patterns in this codebase for the Keeper Seed Vault.
 
-### 3B. Find Vue Components
-```bash
-find . -type f -name "*.vue" | head -50
+Find and document:
+1. **API Routes**: REST endpoints (Express/Fastify/Next.js API routes)
+   - HTTP method, path, auth requirements
+2. **Services**: Service classes/modules
+   - Names, responsibilities, boundaries
+3. **Error Types**: Error codes, error classes, error handling patterns
+4. **Logging Patterns**: Structured logging, log levels, log formats
+5. **Event Schemas**: Domain events, message queues, pub/sub patterns
+
+Output as YAML format matching keeper/seeds/backend.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-### 3C. Find Svelte Components
-```bash
-find . -type f -name "*.svelte" | head -50
+### Agent 3: Data Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover data patterns in this codebase for the Keeper Seed Vault.
+
+Find and document:
+1. **Tables**: Database tables (Prisma, TypeORM, Drizzle, SQL migrations)
+   - Table names, primary keys, indexes, constraints
+2. **Enums**: TypeScript enums, string literal unions, database enums
+   - Enum names, values, scope
+3. **Validation Schemas**: Zod/Yup/Joi schemas
+   - Schema names, what they validate
+4. **Type Aliases**: Shared TypeScript types
+   - Type names, definitions, usage
+
+Output as YAML format matching keeper/seeds/data.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-### 3D. Identify Component Patterns
-Look for:
-- Design system directories (`ui/`, `components/shared/`, `design-system/`)
-- Component libraries (`Button`, `Input`, `Modal`, `Card`, etc.)
-- Variant patterns (primary, secondary, danger, etc.)
+### Agent 4: Auth Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover auth patterns in this codebase for the Keeper Seed Vault.
 
-**Record in frontend.yaml:**
-```yaml
-components:
-  <ComponentName>:
-    variants: [discovered, variants]
-    location: path/to/Component.tsx
-    props: [key, props, found]
-    when_to_use: "<infer from name/context>"
+Find and document:
+1. **Auth Model**: JWT, session, OAuth configuration
+   - Token types, storage, expiry
+2. **Scopes**: Permission scopes defined
+   - Scope names, what they permit, role grants
+3. **Roles**: Role definitions and hierarchy
+   - Role names, inheritance
+4. **Token Shape**: Required and forbidden claims
+5. **Middleware**: Auth middleware patterns
+
+Output as YAML format matching keeper/seeds/auth.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-## Step 4: Discover Backend API Routes
+### Agent 5: Config Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover configuration patterns in this codebase for the Keeper Seed Vault.
 
-### 4A. Find Express/Fastify Routes
-```bash
-grep -r "router\.\(get\|post\|put\|patch\|delete\)" --include="*.ts" --include="*.js" -l
-grep -r "app\.\(get\|post\|put\|patch\|delete\)" --include="*.ts" --include="*.js" -l
+Find and document:
+1. **Feature Flags**: Feature flag systems, flag definitions
+   - Flag names, default values, rollout strategies
+2. **Environment Variables**: Required env vars (.env files, config loaders)
+   - Var names, required/optional, sensitivity
+3. **Config Files**: Configuration file patterns
+   - Formats, locations, schemas
+
+Output as YAML format matching keeper/seeds/config.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-### 4B. Find Next.js/Remix API Routes
-```bash
-find . -path "*/api/*" -type f \( -name "*.ts" -o -name "*.js" \) | head -30
-find . -path "*routes*" -type f \( -name "*.ts" -o -name "*.js" \) | head -30
+### Agent 6: Testing Discovery
+```
+Use Task tool with subagent_type="Explore" and prompt:
+"Discover testing patterns in this codebase for the Keeper Seed Vault.
+
+Find and document:
+1. **Test Fixtures**: Data factories, fixture files
+   - Fixture names, what they create, variants
+2. **Mock Services**: Service mocks, test doubles
+   - Mock names, what they mock
+3. **Test Utilities**: Shared test helpers
+   - Utility names, purposes
+4. **Test Structure**: Test organization patterns
+   - Unit/integration/e2e locations, naming conventions
+5. **Coverage Config**: Coverage thresholds if defined
+
+Output as YAML format matching keeper/seeds/testing.yaml structure.
+Only report what you actually find - do not invent patterns."
 ```
 
-### 4C. Find GraphQL Definitions
-```bash
-find . -type f \( -name "*.graphql" -o -name "*.gql" \) | head -20
-grep -r "type Query" --include="*.ts" --include="*.graphql" -l
-```
+## Step 4: Collect and Merge Results
 
-For each route found, extract:
-- HTTP method (GET, POST, etc.)
-- Path pattern (/users/:id, etc.)
-- Auth requirements (look for middleware)
+After all 6 agents complete, collect their outputs and merge into the seed files:
 
-**Record in backend.yaml:**
-```yaml
-api_routes:
-  <METHOD> <path>:
-    purpose: "<inferred from path/handler>"
-    auth_required: <true|false>
-    scopes: [if found]
+1. Read each agent's output
+2. Parse the YAML discoveries
+3. Merge with existing templates in `keeper/seeds/`
+4. Write updated seed files
 
-services:
-  <ServiceName>:
-    location: path/to/service.ts
-    responsibilities: [inferred]
-```
+For each seed file:
+- Preserve the template structure and comments
+- Add discovered patterns in the appropriate sections
+- Mark discovered items with `# discovered` comment
 
-## Step 5: Discover Database Schema
-
-### 5A. Find Prisma Schema
-```bash
-find . -name "schema.prisma" | head -1
-```
-
-### 5B. Find TypeORM Entities
-```bash
-grep -r "@Entity" --include="*.ts" -l
-```
-
-### 5C. Find Drizzle Schema
-```bash
-find . -type f -name "*.ts" | xargs grep -l "pgTable\|mysqlTable\|sqliteTable" 2>/dev/null | head -10
-```
-
-### 5D. Find SQL Migrations
-```bash
-find . -path "*migration*" -name "*.sql" | head -20
-```
-
-### 5E. Find Mongoose Models
-```bash
-grep -r "mongoose.model\|new Schema" --include="*.ts" --include="*.js" -l
-```
-
-For each table/model found, extract:
-- Table name
-- Key columns/fields
-- Relationships (foreign keys)
-- Indexes
-
-**Record in data.yaml:**
-```yaml
-tables:
-  <table_name>:
-    primary_key: id
-    columns: [discovered, columns]
-    relationships: [if found]
-    indexes: [if found]
-```
-
-## Step 6: Discover Enumerations
-
-### 6A. Find TypeScript Enums
-```bash
-grep -r "^export enum\|^enum " --include="*.ts" | head -30
-```
-
-### 6B. Find Type Unions (String Literals)
-```bash
-grep -r "type.*=.*|" --include="*.ts" | grep -E "'[a-z]+'\s*\|" | head -30
-```
-
-### 6C. Find Database Enums
-Look in Prisma schema, migrations, or ORM definitions for enum types.
-
-For each enum found, extract:
-- Enum name
-- Values
-- Where it's used (scope)
-
-**Record in data.yaml:**
-```yaml
-enums:
-  <enum_name>:
-    values: [discovered, values]
-    extension_policy: append-only  # default safe policy
-    scope: <global|table:name>
-```
-
-## Step 7: Discover Auth Patterns
-
-### 7A. Find Auth Configuration
-```bash
-find . -type f \( -name "*auth*" -o -name "*jwt*" -o -name "*session*" \) \
-  \( -name "*.ts" -o -name "*.js" -o -name "*.json" \) | head -20
-```
-
-### 7B. Find Permission/Scope Definitions
-```bash
-grep -r "scope\|permission\|role" --include="*.ts" | grep -iE "enum|type|const" | head -20
-```
-
-### 7C. Find Auth Middleware
-```bash
-grep -r "authenticate\|authorize\|requireAuth\|isAuthenticated" --include="*.ts" -l
-```
-
-For each auth pattern found, extract:
-- Auth type (JWT, session, OAuth)
-- Token configuration
-- Scopes/permissions defined
-- Role hierarchy
-
-**Record in auth.yaml:**
-```yaml
-auth_model:
-  type: <jwt|session|oauth>
-  token_types: [discovered]
-
-scopes:
-  <scope_name>:
-    description: "<inferred>"
-    granted_to: [roles]
-
-roles:
-  <role_name>:
-    inherits: [other_roles]
-```
-
-## Step 8: Discover Additional Patterns
-
-### 8A. Custom Hooks
-```bash
-find . -type f -name "use*.ts" -o -name "use*.tsx" | head -20
-grep -r "^export function use[A-Z]" --include="*.ts" --include="*.tsx" | head -20
-```
-
-### 8B. Services/Utilities
-```bash
-find . -path "*service*" -type f -name "*.ts" | head -20
-find . -path "*util*" -type f -name "*.ts" | head -20
-```
-
-### 8C. State Management
-```bash
-# Redux
-find . -type f -name "*slice*.ts" -o -name "*reducer*.ts" | head -10
-# Zustand
-grep -r "create(" --include="*.ts" | grep -i "zustand\|store" | head -10
-# Context
-grep -r "createContext\|useContext" --include="*.tsx" -l | head -10
-```
-
-### 8D. Validation Schemas
-```bash
-grep -r "z\.object\|z\.string\|yup\.\|Joi\." --include="*.ts" -l | head -10
-```
-
-### 8E. Design Tokens
-```bash
-find . -type f \( -name "*tokens*" -o -name "*theme*" -o -name "*variables*" \) \
-  \( -name "*.ts" -o -name "*.css" -o -name "*.scss" -o -name "*.json" \) | head -10
-```
-
-## Step 9: Generate Seed Vault Files
-
-Write all discoveries to the seed files:
-
-1. **keeper/seeds/frontend.yaml** - Components, hooks, design tokens
-2. **keeper/seeds/backend.yaml** - Routes, services, utilities
-3. **keeper/seeds/data.yaml** - Tables, enums, validation schemas
-4. **keeper/seeds/auth.yaml** - Auth config, scopes, roles
-
-Use the existing template format, filling in discovered patterns.
-
-## Step 10: Generate Discovery Report
+## Step 5: Generate Discovery Report
 
 Output a summary:
 
@@ -273,22 +170,37 @@ Discovered Patterns:
   Frontend:
     - Components: <count>
     - Hooks: <count>
+    - State stores: <count>
+    - i18n namespaces: <count>
     - Design tokens: <found|not found>
 
   Backend:
     - API Routes: <count>
     - Services: <count>
-    - GraphQL: <found|not found>
+    - Error types: <count>
+    - Logging patterns: <found|not found>
+    - Event schemas: <count>
 
   Data:
     - Tables: <count>
     - Enums: <count>
     - Validation schemas: <count>
+    - Type aliases: <count>
 
   Auth:
-    - Auth type: <jwt|session|none>
+    - Auth type: <jwt|session|oauth|none>
     - Scopes: <count>
     - Roles: <count>
+
+  Config:
+    - Feature flags: <count>
+    - Environment vars: <count>
+    - Config files: <count>
+
+  Testing:
+    - Test fixtures: <count>
+    - Mock services: <count>
+    - Test utilities: <count>
 
 Seed Vault populated at: keeper/seeds/
 
@@ -303,6 +215,7 @@ Next steps:
 
 ## Important Notes
 
+- **Parallel execution is required** - Do NOT run discovery sequentially
 - This is a **best-effort discovery** - manual review is required
 - Some patterns may be missed or misidentified
 - Add `when_to_use` descriptions manually for clarity

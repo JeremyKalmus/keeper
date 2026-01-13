@@ -72,3 +72,151 @@ services:
     forbidden:
       - token operations
       - session management
+
+error_types:
+  # Standardized error codes and types
+  # Prevents inconsistent error handling across services
+  #
+  # ErrorCode:
+  #   http_status: 4xx|5xx
+  #   message_template: "User-facing message"
+  #   log_level: error|warn|info
+  #   retryable: true|false
+
+  AUTH_INVALID_CREDENTIALS:
+    http_status: 401
+    message_template: "Invalid email or password"
+    log_level: warn
+    retryable: false
+
+  AUTH_TOKEN_EXPIRED:
+    http_status: 401
+    message_template: "Session expired, please log in again"
+    log_level: info
+    retryable: false
+
+  AUTH_INSUFFICIENT_SCOPE:
+    http_status: 403
+    message_template: "You don't have permission to perform this action"
+    log_level: warn
+    retryable: false
+
+  RESOURCE_NOT_FOUND:
+    http_status: 404
+    message_template: "The requested {resource} was not found"
+    log_level: info
+    retryable: false
+
+  VALIDATION_ERROR:
+    http_status: 400
+    message_template: "Invalid input: {details}"
+    log_level: info
+    retryable: false
+
+  RATE_LIMIT_EXCEEDED:
+    http_status: 429
+    message_template: "Too many requests, please try again later"
+    log_level: warn
+    retryable: true
+
+  INTERNAL_ERROR:
+    http_status: 500
+    message_template: "An unexpected error occurred"
+    log_level: error
+    retryable: true
+
+  # Forbidden patterns for errors:
+  forbidden_patterns:
+    - exposing stack traces to clients
+    - inconsistent error response shapes
+    - custom error codes without registry entry
+    - swallowing errors without logging
+
+logging_patterns:
+  # Standardized logging conventions
+  # Ensures consistent, searchable, actionable logs
+  #
+  # log_type:
+  #   level: debug|info|warn|error
+  #   required_fields: [list of fields]
+  #   format: "structured log template"
+
+  request_start:
+    level: info
+    required_fields: [request_id, method, path, user_id]
+    format: "req_start"
+
+  request_end:
+    level: info
+    required_fields: [request_id, status_code, duration_ms]
+    format: "req_end"
+
+  auth_event:
+    level: info
+    required_fields: [event_type, user_id, ip_address]
+    format: "auth"
+    event_types: [login, logout, token_refresh, password_change]
+
+  error_event:
+    level: error
+    required_fields: [error_code, message, stack_trace, request_id]
+    format: "error"
+
+  audit_event:
+    level: info
+    required_fields: [action, resource_type, resource_id, user_id, timestamp]
+    format: "audit"
+
+  # Forbidden patterns for logging:
+  forbidden_patterns:
+    - logging passwords or tokens
+    - logging full request bodies with PII
+    - console.log in production code
+    - unstructured string concatenation logs
+
+event_schemas:
+  # Domain events (for event-driven architecture)
+  # EventName:
+  #   topic: "event.topic.name"
+  #   payload_schema: [required fields]
+  #   producers: [services that emit this]
+  #   consumers: [services that listen]
+  #   idempotency: "how to deduplicate"
+
+  user.created:
+    topic: "user.lifecycle"
+    payload_schema:
+      - user_id: string
+      - email: string
+      - created_at: timestamp
+    producers: [UserService]
+    consumers: [NotificationService, AnalyticsService]
+    idempotency: "user_id"
+
+  user.updated:
+    topic: "user.lifecycle"
+    payload_schema:
+      - user_id: string
+      - changed_fields: array
+      - updated_at: timestamp
+    producers: [UserService]
+    consumers: [AnalyticsService]
+    idempotency: "user_id + updated_at"
+
+  auth.login:
+    topic: "auth.events"
+    payload_schema:
+      - user_id: string
+      - login_at: timestamp
+      - ip_address: string
+      - user_agent: string
+    producers: [AuthService]
+    consumers: [AuditService, SecurityService]
+    idempotency: "user_id + login_at"
+
+  # Forbidden patterns for events:
+  forbidden_patterns:
+    - PII in event payloads (use IDs, lookup separately)
+    - events without schema definition
+    - direct service-to-service calls when event would suffice
+    - fire-and-forget without delivery guarantee

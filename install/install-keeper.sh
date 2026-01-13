@@ -168,7 +168,7 @@ if [[ ! -d "$TEMPLATES_DIR" ]]; then
     exit 1
 fi
 
-for seed_file in frontend.yaml backend.yaml data.yaml auth.yaml; do
+for seed_file in frontend.yaml backend.yaml data.yaml auth.yaml config.yaml testing.yaml; do
     src="$TEMPLATES_DIR/seeds/$seed_file"
     dst="$RIG_PATH/keeper/seeds/$seed_file"
 
@@ -408,10 +408,12 @@ echo "Structure:"
 echo "  keeper/"
 echo "  ├── keeper.yaml        # Configuration (mode: $MODE)"
 echo "  ├── seeds/"
-echo "  │   ├── frontend.yaml  # UI component registry"
-echo "  │   ├── backend.yaml   # API routes registry"
-echo "  │   ├── data.yaml      # Schema registry"
-echo "  │   └── auth.yaml      # Auth patterns registry"
+echo "  │   ├── frontend.yaml  # UI components, hooks, i18n, design tokens"
+echo "  │   ├── backend.yaml   # API routes, services, errors, events"
+echo "  │   ├── data.yaml      # Tables, enums, validation schemas"
+echo "  │   ├── auth.yaml      # Auth patterns, scopes, roles"
+echo "  │   ├── config.yaml    # Feature flags, environment config"
+echo "  │   └── testing.yaml   # Test fixtures, mocks, utilities"
 echo "  ├── decisions/         # ADR storage"
 echo "  ├── hooks/"
 echo "  │   └── keeper-gate.sh # Enforcement hook (blocks unauthorized beads)"

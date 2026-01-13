@@ -1,0 +1,124 @@
+# Config Seed Registry
+# Machine-readable registry of feature flags and environment configuration
+# Keeper uses this to enforce consistent configuration management
+
+feature_flags:
+  # Feature flag definitions
+  # Prevents shadow features and inconsistent rollout
+  #
+  # flag_name:
+  #   description: "What this flag controls"
+  #   default: true|false
+  #   rollout: percentage|boolean|user_segment
+  #   owner: "team responsible"
+  #   lifecycle: experimental|stable|deprecated
+
+  # Example:
+  # new_dashboard:
+  #   description: "Enable redesigned dashboard"
+  #   default: false
+  #   rollout: percentage
+  #   owner: "frontend-team"
+  #   lifecycle: experimental
+  #   kill_switch: true
+
+  # Forbidden patterns for feature flags:
+  forbidden_patterns:
+    - hardcoded feature checks (use flag system)
+    - flags without owner
+    - permanent flags (must have lifecycle)
+    - flags that affect auth/security without review
+
+environment_vars:
+  # Required environment variables
+  # Documents what config each service needs
+  #
+  # VAR_NAME:
+  #   required: true|false
+  #   default: "default value if any"
+  #   sensitive: true|false
+  #   used_by: [list of services]
+  #   validation: "format requirements"
+
+  DATABASE_URL:
+    required: true
+    sensitive: true
+    used_by: [api, worker]
+    validation: "postgres:// connection string"
+
+  JWT_SECRET:
+    required: true
+    sensitive: true
+    used_by: [api]
+    validation: "min 32 chars"
+
+  LOG_LEVEL:
+    required: false
+    default: "info"
+    sensitive: false
+    used_by: [api, worker]
+    validation: "debug|info|warn|error"
+
+  NODE_ENV:
+    required: true
+    sensitive: false
+    used_by: [api, worker, frontend]
+    validation: "development|staging|production"
+
+  # Forbidden patterns for env vars:
+  forbidden_patterns:
+    - secrets in code or version control
+    - env vars without documentation
+    - sensitive vars without encryption at rest
+    - service-specific vars without prefix
+
+config_files:
+  # Configuration file standards
+  # Ensures consistent config file structure
+  #
+  # file_pattern:
+  #   format: json|yaml|toml|env
+  #   location: path/pattern
+  #   schema: "validation schema location"
+  #   sensitive: true|false
+
+  app_config:
+    format: yaml
+    location: config/*.yaml
+    schema: src/schemas/config.ts
+    sensitive: false
+    environments: [development, staging, production]
+
+  secrets:
+    format: env
+    location: .env*
+    sensitive: true
+    gitignored: true
+
+  # Forbidden patterns for config files:
+  forbidden_patterns:
+    - secrets in non-.env files
+    - config files without schema validation
+    - environment-specific logic in code (use config)
+    - magic strings (use constants from config)
+
+runtime_config:
+  # Runtime configuration patterns
+  # How services load and validate config
+  #
+  # pattern:
+  #   location: path/to/config/loader
+  #   validates_at: startup|runtime
+  #   fails_on: missing_required|invalid_format
+
+  config_loader:
+    location: src/config/index.ts
+    validates_at: startup
+    fails_on: [missing_required, invalid_format]
+    caches: true
+
+  # Forbidden patterns for runtime config:
+  forbidden_patterns:
+    - reading env vars directly in business logic
+    - config changes without restart (unless explicitly hot-reload)
+    - untyped config objects
