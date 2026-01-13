@@ -57,6 +57,54 @@ This transforms architecture from culture into infrastructure.
 ./install/uninstall-keeper.sh --keep-decisions ~/gt/myproject  # Preserve ADRs
 ```
 
+## Planting Seeds (Initial Setup)
+
+After installation, run `/keeper-plant` to discover existing patterns in your codebase:
+
+```
+> /keeper-plant
+
+KEEPER PLANT SEEDS: COMPLETE
+
+Discovered Patterns:
+  Frontend:
+    - Components: 24
+    - Hooks: 8
+    - Design tokens: found
+
+  Backend:
+    - API Routes: 15
+    - Services: 6
+    - GraphQL: not found
+
+  Data:
+    - Tables: 12
+    - Enums: 7
+    - Validation schemas: 4
+
+  Auth:
+    - Auth type: jwt
+    - Scopes: 5
+    - Roles: 3
+```
+
+### What Gets Discovered
+
+| Category | Patterns Found |
+|----------|---------------|
+| **Frontend** | React/Vue/Svelte components, custom hooks, design tokens |
+| **Backend** | REST routes, GraphQL schemas, services, utilities |
+| **Data** | Database tables, enums, validation schemas (Zod/Yup) |
+| **Auth** | Auth type (JWT/session), scopes, roles, permissions |
+| **State** | Redux stores, Zustand, Context providers |
+
+### After Discovery
+
+1. **Review** `keeper/seeds/*.yaml` - discovery is best-effort
+2. **Add missing patterns** that weren't auto-detected
+3. **Set `forbidden_extensions`** for each component
+4. **Add `when_to_use`** descriptions for clarity
+
 ## Mayor Integration
 
 **IMPORTANT**: The Mayor must run `/keeper-review` before creating beads for any feature work.
@@ -220,6 +268,7 @@ The Keeper uses deterministic matrices:
 
 | Command | Who | When |
 |---------|-----|------|
+| `/keeper-plant` | Mayor | Once after install (discovers existing patterns) |
 | `/keeper-review <spec>` | Mayor | Before creating beads |
 | `/keeper-validate <adr>` | Refinery | Before merging PR |
 

@@ -241,7 +241,9 @@ if [[ "$SKIP_MAYOR" != true ]]; then
     if [[ -n "$MAYOR_COMMANDS" ]]; then
         mkdir -p "$MAYOR_COMMANDS"
         cp "$SCRIPT_DIR/commands/keeper-review.md" "$MAYOR_COMMANDS/"
+        cp "$SCRIPT_DIR/commands/keeper-plant.md" "$MAYOR_COMMANDS/"
         print_success "Installed /keeper-review to Mayor"
+        print_success "Installed /keeper-plant to Mayor"
     else
         print_warning "Mayor .claude directory not found, skipping Mayor commands"
     fi
@@ -337,6 +339,7 @@ if [[ -d "$TOWN_ROOT/.claude" ]]; then
     mkdir -p "$TOWN_COMMANDS"
     cp "$SCRIPT_DIR/commands/keeper-review.md" "$TOWN_COMMANDS/"
     cp "$SCRIPT_DIR/commands/keeper-validate.md" "$TOWN_COMMANDS/"
+    cp "$SCRIPT_DIR/commands/keeper-plant.md" "$TOWN_COMMANDS/"
     print_success "Installed commands to town-level .claude/commands/"
 fi
 
@@ -415,13 +418,14 @@ echo "  │   └── keeper-gate.sh # Enforcement hook (blocks unauthorized b
 echo "  └── KEEPER-INSTRUCTIONS.md"
 echo ""
 echo "Next steps:"
-echo "  1. Edit seeds/*.yaml to document your existing patterns"
-echo "  2. Add Keeper instructions to Mayor and Refinery CLAUDE.md"
-echo "  3. Run a Founding Convoy if this is a new project"
+echo "  1. Run /keeper-plant to discover existing patterns"
+echo "  2. Review and refine keeper/seeds/*.yaml"
+echo "  3. Add Keeper instructions to Mayor and Refinery CLAUDE.md"
 echo ""
 echo "Commands available:"
-echo "  /keeper-review <spec>     # Mayor: review spec before creating beads"
-echo "  /keeper-validate <adr>    # Refinery: validate changes before merge"
+echo "  /keeper-plant             # Discover existing patterns (run once after install)"
+echo "  /keeper-review <spec>     # Review spec before creating beads"
+echo "  /keeper-validate <adr>    # Validate changes before merge"
 echo ""
 echo -e "${YELLOW}ENFORCEMENT ACTIVE:${NC}"
 echo "  Mayor cannot run 'bd create' or 'gt convoy create' without"
