@@ -1,6 +1,6 @@
 # Keeper Tend - Incremental Seed Maintenance
 
-**Status**: Draft
+**Status**: Proposed (Future Enhancement)
 **Author**: keeper/crew/max
 **Date**: 2026-01-13
 

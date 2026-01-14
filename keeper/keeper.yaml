@@ -84,6 +84,8 @@ seed_vault:
   backend: seeds/backend.yaml
   data: seeds/data.yaml
   auth: seeds/auth.yaml
+  config: seeds/config.yaml
+  testing: seeds/testing.yaml
 
 # =============================================================================
 # DECISIONS OUTPUT

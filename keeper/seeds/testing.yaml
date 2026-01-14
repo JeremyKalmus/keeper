@@ -1,0 +1,52 @@
+# Testing Seed Registry
+# Machine-readable registry of test patterns
+# Keeper uses this to enforce consistency in test infrastructure
+
+test_fixtures:
+  # Example fixture entry:
+  # FixtureName:
+  #   location: path/to/fixture.ts
+  #   creates: "What entity/data this fixture produces"
+  #   variants: [list, of, variants]
+  #   when_to_use: "Description of appropriate usage"
+
+  # Add your fixtures here after discovery with /keeper-plant
+  # Example:
+  # UserFixture:
+  #   location: tests/fixtures/user.ts
+  #   creates: "User entity with sensible defaults"
+  #   variants: [admin, regular, guest]
+  #   when_to_use: "Any test requiring a user object"
+
+mock_services:
+  # Example mock entry:
+  # MockServiceName:
+  #   location: path/to/mock.ts
+  #   mocks: "ServiceName it replaces"
+  #   default_behavior: "What it returns by default"
+  #   when_to_use: "When to use this mock vs real service"
+
+  # Add your mocks here after discovery with /keeper-plant
+  # Example:
+  # MockAuthService:
+  #   location: tests/mocks/auth.ts
+  #   mocks: AuthService
+  #   default_behavior: "Returns valid authenticated user"
+  #   when_to_use: "Tests not specifically testing auth"
+
+test_utilities:
+  # Example utility entry:
+  # utility_name:
+  #   location: path/to/util.ts
+  #   purpose: "What this utility does"
+  #   forbidden_alternatives:
+  #     - things not to do instead
+
+  # Add your test utilities here after discovery with /keeper-plant
+
+coverage_config:
+  # Coverage requirements and configuration
+  # threshold: 80
+  # exclude:
+  #   - "**/*.test.ts"
+  #   - "**/mocks/**"

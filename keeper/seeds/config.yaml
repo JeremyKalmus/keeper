@@ -1,0 +1,48 @@
+# Config Seed Registry
+# Machine-readable registry of configuration patterns
+# Keeper uses this to enforce consistency in feature flags and environment config
+
+feature_flags:
+  # Example feature flag entry:
+  # flag_name:
+  #   description: "What this flag controls"
+  #   default: true|false
+  #   rollout: percentage|boolean|user_segment
+  #   owner: "team or person responsible"
+  #   lifecycle: experimental|stable|deprecated
+
+  # Add your feature flags here after discovery with /keeper-plant
+  # Example:
+  # new_dashboard:
+  #   description: "Enable redesigned dashboard"
+  #   default: false
+  #   rollout: percentage
+  #   owner: "frontend-team"
+  #   lifecycle: experimental
+
+environment_vars:
+  # Example environment variable entry:
+  # VAR_NAME:
+  #   required: true|false
+  #   sensitive: true|false (true = should not be logged)
+  #   used_by: [list, of, services]
+  #   description: "What this variable configures"
+
+  # Add your environment variables here after discovery with /keeper-plant
+  # Example:
+  # DATABASE_URL:
+  #   required: true
+  #   sensitive: true
+  #   used_by: [api, worker]
+  #   description: "Primary database connection string"
+
+config_files:
+  # Example config file entry:
+  # filename:
+  #   location: path/to/file
+  #   format: yaml|json|toml|env
+  #   purpose: "What this config controls"
+  #   forbidden_modifications:
+  #     - list of things not to change
+
+  # Add your config files here after discovery with /keeper-plant
