@@ -1,0 +1,98 @@
+keeper_decision:
+  id: ADR-003
+  date: 2026-01-13
+  spec: "specs/keeper-streaming-context.md (revised)"
+  mode: growth
+  status: approved
+  supersedes: ADR-002
+
+  # This is a meta-spec about Keeper itself, not a feature review
+  # Standard seed vault checks do not apply - this is plugin infrastructure
+
+  summary: |
+    Approve tiered context streaming architecture for Keeper integration.
+    Transforms Keeper from blocking gate to streaming context enrichment.
+    Token efficiency improvement: 3000 → 650 tokens for 5-bead convoy.
+
+  reuse:
+    infrastructure:
+      - gastown hook system (pre-convoy, convoy-briefing)
+      - existing keeper/seeds/*.yaml vault structure
+      - existing keeper/decisions/ output location
+
+  extensions:
+    hooks:
+      pre-convoy:
+        add: "Full keeper review with ADR generation and minimal bead frontmatter output"
+    file_formats:
+      bead_frontmatter:
+        add: "keeper: ADR-NNN reference format (~30 tokens)"
+      adr_file:
+        add: "reuse/extend/forbidden/constraints structure (~500 tokens)"
+
+  new_seeds: []
+  # No new seeds - this is infrastructure evolution
+
+  forbidden:
+    - modifying gastown core code (gt, bd)
+    - per-bead full work order embedding (token waste)
+    - blocking human confirmation loops (GUPP violation)
+    - advisory-only validation (defeats purpose)
+
+  removals:
+    - hooks/post-bead-create (legacy keyword matching)
+    - hooks/keeper-gate.sh (PreToolUse, no longer needed)
+
+  additions:
+    - hooks/pre-convoy (full keeper review)
+    - lib/keeper-review.sh (shared review logic)
+    - templates/adr.yaml (decision file template)
+    - POLECAT-BRIEFING.md (context loading instructions)
+
+  constraints:
+    - plugin-isolation: "All changes via hooks and files, no core modifications"
+    - token-budget: "< 1000 tokens for any convoy size"
+    - backward-compat: "Removing keeper plugin must not break gastown"
+    - gupp-compliance: "No blocking human confirmation loops on approval"
+    - validation-blocking: "keeper-validate must be blocking, not advisory"
+
+  constraint_codes:
+    - no-core-mods
+    - token-efficient
+    - backward-compat
+
+  rationale: |
+    The revised spec addresses all concerns from the original ADR-002 review:
+
+    1. TOKEN EFFICIENCY: Tiered context (bead ref → ADR → seeds) reduces
+       convoy overhead from ~3000 tokens to ~650 tokens for 5-bead convoy.
+       This scales better as convoy size increases.
+
+    2. GUPP COMPLIANCE: Inline review via pre-convoy hook replaces manual
+       /keeper-review command. Human intervention only on rejection.
+
+    3. PLUGIN ISOLATION: All changes via hooks and files. Gastown core
+       code remains unmodified. Clean removal path.
+
+    4. VALIDATION: keeper-validate is blocking, ensuring drift prevention
+       rather than advisory warnings.
+
+    Decision: APPROVED for implementation. This supersedes ADR-002.
+
+  implementation_phases:
+    phase1:
+      title: "Hook Infrastructure"
+      tasks:
+        - "Create pre-convoy hook with ADR generation"
+        - "Create lib/keeper-review.sh shared logic"
+        - "Create templates/adr.yaml"
+    phase2:
+      title: "Legacy Removal"
+      tasks:
+        - "Remove post-bead-create hook"
+        - "Remove keeper-gate.sh hook"
+    phase3:
+      title: "Documentation"
+      tasks:
+        - "Create POLECAT-BRIEFING.md"
+        - "Update keeper documentation"

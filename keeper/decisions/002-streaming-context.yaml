@@ -1,0 +1,73 @@
+# Keeper Decision: Streaming Context Integration
+# ADR-002
+# Generated: 2026-01-13
+
+keeper_decision:
+  id: ADR-002
+  date: 2026-01-13
+  spec: "specs/keeper-streaming-context.md"
+  mode: growth
+  status: approved
+
+  # This is an infrastructure spec, not a domain feature.
+  # No frontend/backend/data/auth seeds are affected.
+
+  reuse:
+    infrastructure:
+      - gastown pre-convoy hook mechanism
+      - bead description as work order carrier
+      - environment variables for hook context
+      - keeper_decision YAML format
+    patterns:
+      - YAML frontmatter in text (common convention)
+      - hook exit codes for flow control
+
+  extensions:
+    hooks:
+      pre-convoy:
+        change: "Inline keeper review + work order generation"
+        replaces: "Separate /keeper-review command in blocking flow"
+
+  new_seeds:
+    - type: schema
+      name: keeper_work_order
+      scope: internal:keeper
+      justification: |
+        Standard format for injecting keeper context into bead descriptions.
+        Internal to keeper plugin, not a domain seed.
+        Must be documented in templates/work-order.yaml.
+
+  forbidden:
+    - Modifying gastown core code (gt, bd commands)
+    - New domain seeds without feature justification
+    - Blocking automation flow for approval status
+
+  constraints:
+    - Work order format must be documented in templates/
+    - pre-convoy hook must exit 0 on approval, non-zero on rejection
+    - Legacy hooks (post-bead-create, keeper-gate.sh) must be removed
+    - File-based approach preferred over stdout parsing for compatibility
+    - Polecats must be able to parse YAML frontmatter from bead descriptions
+
+  rationale: |
+    The current keeper implementation creates an anti-pattern by blocking
+    gastown's autonomous workflow. The Mayor asks "what next?" after keeper
+    review, requiring human input to continue.
+
+    This violates the Gas Town Propulsion Principle (GUPP): work arrives →
+    process → hand off → next agent runs. No human confirmation loops.
+
+    The proposed streaming context approach:
+    1. Integrates keeper review inline during convoy creation
+    2. Injects rich guidance directly into bead descriptions
+    3. Polecats receive institutional knowledge as part of their assignment
+    4. Human intervention only on rejection
+
+    This aligns keeper with gastown's design philosophy while preserving
+    keeper's governance function (preventing architectural drift).
+
+    The approach is plugin-safe:
+    - Uses only hook interfaces gastown already provides
+    - Doesn't modify any gastown internal code
+    - Can be cleanly removed without breaking gastown
+    - Forward compatible with gastown evolution
