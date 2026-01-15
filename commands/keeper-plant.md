@@ -28,179 +28,165 @@ If `--mode` specified in arguments, note it. Otherwise default to `seeding` for 
 
 ## Step 3: Launch Parallel Discovery Agents
 
-**CRITICAL**: To handle large codebases without context overflow, you MUST spawn 6 parallel
-sub-agents using the Task tool. Each agent discovers patterns for one seed category.
+**CRITICAL**: To handle large codebases without context overflow, spawn 6 parallel
+sub-agents using the Task tool. Each agent:
+1. Discovers patterns for one seed category
+2. **Writes directly to the seed file** (do NOT return YAML to main agent)
+3. Returns only a **brief summary** (counts)
 
-Launch ALL of these agents in a SINGLE message with multiple Task tool calls:
+This keeps discovery data in sub-agent context, not the main agent.
+
+Launch ALL agents in a SINGLE message with multiple Task tool calls:
 
 ### Agent 1: Frontend Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover frontend patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for FRONTEND patterns.
 
-Find and document:
-1. **Components**: React/Vue/Svelte components in ui/, components/, shared/ directories
-   - Component names, variants, props, locations
-2. **Hooks**: Custom hooks (use*.ts files)
-   - Hook names, purpose, return types
-3. **State Stores**: Redux slices, Zustand stores, Context providers
-   - Store names, what state they manage
-4. **i18n Keys**: Translation key namespaces and locations
-5. **Design Tokens**: Theme files, CSS variables, Tailwind config
+TASK:
+1. Read the template: keeper/seeds/frontend.yaml
+2. Scan the codebase for frontend patterns:
+   - Components: React/Vue/Svelte in ui/, components/, shared/
+   - Hooks: Custom hooks (use*.ts files)
+   - State Stores: Redux, Zustand, Context providers
+   - i18n Keys: Translation namespaces
+   - Design Tokens: Theme files, CSS variables, Tailwind config
+3. WRITE your discoveries directly to keeper/seeds/frontend.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Frontend: 12 components, 5 hooks, 2 stores, 0 i18n, 1 design tokens'
 
-Output as YAML format matching keeper/seeds/frontend.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
 ### Agent 2: Backend Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover backend patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for BACKEND patterns.
 
-Find and document:
-1. **API Routes**: REST endpoints (Express/Fastify/Next.js API routes)
-   - HTTP method, path, auth requirements
-2. **Services**: Service classes/modules
-   - Names, responsibilities, boundaries
-3. **Error Types**: Error codes, error classes, error handling patterns
-4. **Logging Patterns**: Structured logging, log levels, log formats
-5. **Event Schemas**: Domain events, message queues, pub/sub patterns
+TASK:
+1. Read the template: keeper/seeds/backend.yaml
+2. Scan the codebase for backend patterns:
+   - API Routes: REST endpoints (Express/Fastify/Next.js)
+   - Services: Service classes/modules
+   - Error Types: Error codes, error classes
+   - Logging Patterns: Structured logging patterns
+   - Event Schemas: Domain events, message queues
+3. WRITE your discoveries directly to keeper/seeds/backend.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Backend: 8 routes, 4 services, 3 error types, logging found, 2 events'
 
-Output as YAML format matching keeper/seeds/backend.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
 ### Agent 3: Data Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover data patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for DATA patterns.
 
-Find and document:
-1. **Tables**: Database tables (Prisma, TypeORM, Drizzle, SQL migrations)
-   - Table names, primary keys, indexes, constraints
-2. **Enums**: TypeScript enums, string literal unions, database enums
-   - Enum names, values, scope
-3. **Validation Schemas**: Zod/Yup/Joi schemas
-   - Schema names, what they validate
-4. **Type Aliases**: Shared TypeScript types
-   - Type names, definitions, usage
+TASK:
+1. Read the template: keeper/seeds/data.yaml
+2. Scan the codebase for data patterns:
+   - Tables: Database tables (Prisma, TypeORM, Drizzle, SQL)
+   - Enums: TypeScript enums, string unions, DB enums
+   - Validation Schemas: Zod/Yup/Joi schemas
+   - Type Aliases: Shared TypeScript types
+3. WRITE your discoveries directly to keeper/seeds/data.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Data: 10 tables, 7 enums, 4 schemas, 3 type aliases'
 
-Output as YAML format matching keeper/seeds/data.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
 ### Agent 4: Auth Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover auth patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for AUTH patterns.
 
-Find and document:
-1. **Auth Model**: JWT, session, OAuth configuration
-   - Token types, storage, expiry
-2. **Scopes**: Permission scopes defined
-   - Scope names, what they permit, role grants
-3. **Roles**: Role definitions and hierarchy
-   - Role names, inheritance
-4. **Token Shape**: Required and forbidden claims
-5. **Middleware**: Auth middleware patterns
+TASK:
+1. Read the template: keeper/seeds/auth.yaml
+2. Scan the codebase for auth patterns:
+   - Auth Model: JWT, session, OAuth configuration
+   - Scopes: Permission scopes defined
+   - Roles: Role definitions and hierarchy
+   - Token Shape: Required/forbidden claims
+   - Middleware: Auth middleware patterns
+3. WRITE your discoveries directly to keeper/seeds/auth.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Auth: jwt model, 5 scopes, 3 roles, middleware found'
 
-Output as YAML format matching keeper/seeds/auth.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
 ### Agent 5: Config Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover configuration patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for CONFIG patterns.
 
-Find and document:
-1. **Feature Flags**: Feature flag systems, flag definitions
-   - Flag names, default values, rollout strategies
-2. **Environment Variables**: Required env vars (.env files, config loaders)
-   - Var names, required/optional, sensitivity
-3. **Config Files**: Configuration file patterns
-   - Formats, locations, schemas
+TASK:
+1. Read the template: keeper/seeds/config.yaml
+2. Scan the codebase for config patterns:
+   - Feature Flags: Flag systems, flag definitions
+   - Environment Variables: Required env vars
+   - Config Files: Configuration file patterns
+3. WRITE your discoveries directly to keeper/seeds/config.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Config: 3 feature flags, 12 env vars, 2 config files'
 
-Output as YAML format matching keeper/seeds/config.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
 ### Agent 6: Testing Discovery
 ```
-Use Task tool with subagent_type="Explore" and prompt:
-"Discover testing patterns in this codebase for the Keeper Seed Vault.
+Use Task tool with subagent_type="general-purpose" and prompt:
+"You are a Keeper seed discovery agent for TESTING patterns.
 
-Find and document:
-1. **Test Fixtures**: Data factories, fixture files
-   - Fixture names, what they create, variants
-2. **Mock Services**: Service mocks, test doubles
-   - Mock names, what they mock
-3. **Test Utilities**: Shared test helpers
-   - Utility names, purposes
-4. **Test Structure**: Test organization patterns
-   - Unit/integration/e2e locations, naming conventions
-5. **Coverage Config**: Coverage thresholds if defined
+TASK:
+1. Read the template: keeper/seeds/testing.yaml
+2. Scan the codebase for testing patterns:
+   - Test Fixtures: Data factories, fixture files
+   - Mock Services: Service mocks, test doubles
+   - Test Utilities: Shared test helpers
+   - Test Structure: Unit/integration/e2e organization
+   - Coverage Config: Coverage thresholds
+3. WRITE your discoveries directly to keeper/seeds/testing.yaml
+   - Preserve template structure
+   - Add discovered items with '# discovered' comment
+4. Return ONLY a brief summary like:
+   'Testing: 5 fixtures, 3 mocks, 4 utilities, coverage configured'
 
-Output as YAML format matching keeper/seeds/testing.yaml structure.
-Only report what you actually find - do not invent patterns."
+Do NOT return the full YAML - write it to the file directly.
+Only report patterns you actually find - do not invent."
 ```
 
-## Step 4: Collect and Merge Results
+## Step 4: Generate Discovery Report
 
-After all 6 agents complete, collect their outputs and merge into the seed files:
-
-1. Read each agent's output
-2. Parse the YAML discoveries
-3. Merge with existing templates in `keeper/seeds/`
-4. Write updated seed files
-
-For each seed file:
-- Preserve the template structure and comments
-- Add discovered patterns in the appropriate sections
-- Mark discovered items with `# discovered` comment
-
-## Step 5: Generate Discovery Report
-
-Output a summary:
+After all 6 agents complete, compile their **summaries** (not full YAML) into a report:
 
 ```
 KEEPER PLANT SEEDS: COMPLETE
 
 Discovered Patterns:
-  Frontend:
-    - Components: <count>
-    - Hooks: <count>
-    - State stores: <count>
-    - i18n namespaces: <count>
-    - Design tokens: <found|not found>
-
-  Backend:
-    - API Routes: <count>
-    - Services: <count>
-    - Error types: <count>
-    - Logging patterns: <found|not found>
-    - Event schemas: <count>
-
-  Data:
-    - Tables: <count>
-    - Enums: <count>
-    - Validation schemas: <count>
-    - Type aliases: <count>
-
-  Auth:
-    - Auth type: <jwt|session|oauth|none>
-    - Scopes: <count>
-    - Roles: <count>
-
-  Config:
-    - Feature flags: <count>
-    - Environment vars: <count>
-    - Config files: <count>
-
-  Testing:
-    - Test fixtures: <count>
-    - Mock services: <count>
-    - Test utilities: <count>
+  Frontend: <agent 1 summary>
+  Backend: <agent 2 summary>
+  Data: <agent 3 summary>
+  Auth: <agent 4 summary>
+  Config: <agent 5 summary>
+  Testing: <agent 6 summary>
 
 Seed Vault populated at: keeper/seeds/
 
@@ -213,7 +199,7 @@ Next steps:
 4. Run /keeper-review on your first spec
 ```
 
-## Step 6: Commit the Seeds
+## Step 5: Commit the Seeds
 
 **CRITICAL**: Discovered seeds MUST be committed to avoid data loss during worktree operations.
 
@@ -235,6 +221,7 @@ Uncommitted seeds may be lost during worktree operations.
 ## Important Notes
 
 - **Parallel execution is required** - Do NOT run discovery sequentially
+- **Agents write directly** - They write to files, return only summaries
 - **Seeds must be committed** - Uncommitted seeds are lost when worktrees change
 - This is a **best-effort discovery** - manual review is required
 - Some patterns may be missed or misidentified
