@@ -1,6 +1,6 @@
 ---
 description: Discover existing patterns and populate the Seed Vault (run once after install)
-allowed-tools: Read,Write,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Task
+allowed-tools: Read,Write,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(git add:*),Bash(git commit:*),Task
 argument-hint: [--mode seeding|growth]
 ---
 
@@ -213,9 +213,29 @@ Next steps:
 4. Run /keeper-review on your first spec
 ```
 
+## Step 6: Commit the Seeds
+
+**CRITICAL**: Discovered seeds MUST be committed to avoid data loss during worktree operations.
+
+```bash
+git add keeper/seeds/*.yaml keeper/keeper.yaml
+git commit -m "chore(keeper): plant seeds - initial discovery
+
+Discovered patterns via /keeper-plant.
+Review and refine as needed."
+```
+
+If the commit fails (e.g., no changes or git issues), warn the user:
+```
+⚠️  WARNING: Seeds were written but NOT committed.
+Run: git add keeper/seeds/*.yaml && git commit -m "plant seeds"
+Uncommitted seeds may be lost during worktree operations.
+```
+
 ## Important Notes
 
 - **Parallel execution is required** - Do NOT run discovery sequentially
+- **Seeds must be committed** - Uncommitted seeds are lost when worktrees change
 - This is a **best-effort discovery** - manual review is required
 - Some patterns may be missed or misidentified
 - Add `when_to_use` descriptions manually for clarity
