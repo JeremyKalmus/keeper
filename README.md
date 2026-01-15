@@ -32,6 +32,22 @@ This transforms architecture from culture into infrastructure.
 ./install/install-keeper.sh --mode conservation ~/gt/stable
 ```
 
+### Installation Notes
+
+**Session Restart Warning**: Installing Keeper from within an active Claude Code
+session (Mayor, crew member, etc.) will **restart that session** to load the new
+hooks. Your current conversation context will be lost.
+
+**To avoid losing your session:**
+- Install from a **separate terminal** (not from within Claude Code)
+- Or use a **separate Claude Code session** dedicated to installation
+
+**Installation Scope**: Keeper installs at the **rig level**, not per-session:
+- `/keeper-review` and `/keeper-plant` → Mayor + crew
+- `/keeper-validate` → Refinery
+- All agents in the rig get access after a single install
+- No need to install separately for each agent
+
 ### What Gets Installed
 
 ```
