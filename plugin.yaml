@@ -59,6 +59,14 @@ install:
       targets:
         - refinery/.claude/commands/
         - .claude/commands/
+    - source: commands/keeper-tend.md
+      targets:
+        - mayor/.claude/commands/
+        - .claude/commands/
+    - source: commands/keeper-prune.md
+      targets:
+        - mayor/.claude/commands/
+        - .claude/commands/
 
 # Uninstallation
 uninstall:
@@ -92,6 +100,18 @@ commands:
     usage: "/keeper-validate <adr-id-or-branch>"
     for: [refinery]
     file: commands/keeper-validate.md
+
+  keeper-tend:
+    description: "Lightweight incremental seed maintenance - check recent changes"
+    usage: "/keeper-tend [--days N] [--mode seeding|growth]"
+    for: [mayor, crew]
+    file: commands/keeper-tend.md
+
+  keeper-prune:
+    description: "Analyze codebase for redundancy, generate consolidation recommendations"
+    usage: "/keeper-prune [--category components|services|types|routes]"
+    for: [mayor, crew]
+    file: commands/keeper-prune.md
 
 # Configuration schema
 config_schema:
