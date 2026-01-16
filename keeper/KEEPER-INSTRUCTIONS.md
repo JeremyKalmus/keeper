@@ -6,6 +6,25 @@ The Keeper prevents architectural drift by enforcing reuse over creation.
 
 > **No Keeper, no convoy. No seeds, no Keeper.**
 
+## For Polecats: MANDATORY First Step
+
+**Before writing ANY code**, if your bead references a Keeper ADR:
+
+```bash
+# Find and read the keeper decision
+ls keeper/decisions/
+cat keeper/decisions/<ADR-number>-*.yaml
+```
+
+The decision file contains:
+- **reuse**: Existing components you MUST use
+- **extensions**: How to extend existing patterns (not create new)
+- **new_seeds**: Only new patterns explicitly approved
+- **forbidden**: Patterns you MUST NOT create
+- **constraints**: Specific implementation rules
+
+**Violating the keeper decision will cause your PR to be rejected by `/keeper-validate`.**
+
 ## For Every Feature, Answer Four Questions
 
 1. **What already exists?** - Check the seed vault

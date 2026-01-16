@@ -150,9 +150,20 @@ Forbidden: <list>
 Decision saved: keeper/decisions/NNN-<name>.yaml
 
 [If APPROVED]
-Ready for convoy creation. Include this in bead descriptions:
-  Keeper ADR: NNN
-  Constraints: <list key constraints>
+Ready for convoy creation. Include this EXACT text in bead descriptions:
+
+---
+**Keeper ADR: NNN** - READ BEFORE CODING
+
+Before writing code, read: `keeper/decisions/NNN-<name>.yaml`
+
+Key constraints:
+- REUSE: <list key components to reuse>
+- FORBIDDEN: <list forbidden patterns>
+- EXTENSIONS: <list approved extensions>
+---
+
+This ensures polecats read the full decision before implementing.
 
 [If REJECTED]
 Rejection reasons:
