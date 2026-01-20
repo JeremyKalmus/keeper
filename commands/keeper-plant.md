@@ -1,6 +1,6 @@
 ---
 description: Discover existing patterns and populate the Seed Vault (run once after install)
-allowed-tools: Read,Write,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(git add:*),Bash(git commit:*),Task
+allowed-tools: Read,Write,Glob,Grep,Bash(find:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Task
 argument-hint: [--mode seeding|growth]
 ---
 
@@ -193,10 +193,11 @@ Seed Vault populated at: keeper/seeds/
 Mode set to: <seeding|growth>
 
 Next steps:
-1. Review keeper/seeds/*.yaml for accuracy
-2. Add any patterns that weren't auto-discovered
-3. Set forbidden_extensions for each component
-4. Run /keeper-review on your first spec
+1. Seeds committed and pushed (available to all agents)
+2. Review keeper/seeds/*.yaml for accuracy
+3. Add any patterns that weren't auto-discovered
+4. Set forbidden_extensions for each component
+5. Run /keeper-review on your first spec
 ```
 
 ## Step 5: Commit the Seeds
@@ -209,13 +210,14 @@ git commit -m "chore(keeper): plant seeds - initial discovery
 
 Discovered patterns via /keeper-plant.
 Review and refine as needed."
+git push
 ```
 
-If the commit fails (e.g., no changes or git issues), warn the user:
+If the commit or push fails, warn the user:
 ```
-⚠️  WARNING: Seeds were written but NOT committed.
-Run: git add keeper/seeds/*.yaml && git commit -m "plant seeds"
-Uncommitted seeds may be lost during worktree operations.
+⚠️  WARNING: Seeds were written but NOT pushed.
+Run: git add keeper/seeds/*.yaml && git commit -m "plant seeds" && git push
+Unpushed seeds don't propagate to new clones or crew members.
 ```
 
 ## Important Notes
