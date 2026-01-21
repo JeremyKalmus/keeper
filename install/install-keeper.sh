@@ -205,6 +205,7 @@ seed_vault:
   backend: seeds/backend.yaml
   data: seeds/data.yaml
   auth: seeds/auth.yaml
+  testing: seeds/testing.yaml
 
 # Decisions output directory
 decisions_dir: decisions/

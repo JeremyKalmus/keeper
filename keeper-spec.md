@@ -36,6 +36,7 @@ Create a structured registry (machine-readable, not prose):
   backend.yaml
   data.yaml
   auth.yaml
+  testing.yaml
 
 Example: frontend.yaml
 
@@ -79,6 +80,32 @@ tables:
     primary_key: id
     enum_fields:
       - user_status
+
+Example: testing.yaml
+
+test_files:
+  src/**/*.test.ts:
+    purpose: "Unit tests for TypeScript source"
+    framework: vitest
+    run_command: "npm test"
+
+fixtures:
+  createTestUser:
+    location: tests/fixtures/user.ts
+    purpose: "Creates a test user with default values"
+    usage: "const user = createTestUser({ overrides })"
+
+conventions:
+  test_naming:
+    pattern: "{feature}.test.{ext}"
+  test_description:
+    pattern: "should {expected behavior} when {condition}"
+
+run_commands:
+  unit:
+    command: "npm test"
+  integration:
+    command: "npm run test:integration"
 
 Polecats do not interpret this.
 The Keeper does.
@@ -163,10 +190,48 @@ keeper_decision:
   forbidden:
     - new auth services
     - new modal implementations
+  verification:
+    test_files:
+      - file: src/features/users.test.ts
+        action: extend
+    criteria:
+      - id: AC-1
+        criterion: "User profile is retrieved successfully"
+        test_name: "should return user profile when valid id provided"
+      - id: AC-2
+        criterion: "Last login field is populated"
+        test_name: "should include last_login in response"
+    fixtures:
+      - createTestUser
+    run_command: "npm test"
 
 This file becomes immutable input for all convoys.
 
 If a polecat violates it → output is rejected automatically.
+
+⸻
+
+4.1. Verification Block (Test-Driven Development)
+
+The verification block links acceptance criteria to specific tests:
+
+verification:
+  test_files:          # Which test files to create/extend/modify
+    - file: path/to/test.ts
+      action: extend   # extend | create | modify
+  criteria:            # Acceptance criteria with auto-generated IDs
+    - id: AC-1
+      criterion: "Human-readable acceptance criterion"
+      test_name: "should expected_behavior when condition"
+  fixtures:            # Fixtures from testing.yaml to use
+    - fixtureName
+  run_command: "npm test"  # Command to run tests
+
+This enables:
+	•	Traceability: Each criterion maps to a specific test
+	•	Enforcement: Polecats know exactly which tests to write
+	•	Audit: Townview can verify "did tests for AC-1 pass?"
+	•	TDD: Requirements → Tests → Implementation
 
 ⸻
 

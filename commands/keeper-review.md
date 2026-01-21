@@ -23,6 +23,7 @@ Read all seed files:
 - `seeds/backend.yaml` - API routes, services
 - `seeds/data.yaml` - Database schemas, enums, types
 - `seeds/auth.yaml` - Authentication patterns
+- `seeds/testing.yaml` - Test files, fixtures, conventions
 
 Also read the keeper config:
 - `keeper/keeper.yaml` or `keeper.yaml` - for current mode (seeding/growth/conservation)
@@ -82,6 +83,18 @@ Check `keeper.yaml` for mode:
 - **growth**: Reuse-first, extensions preferred, new seeds gated
 - **conservation**: New seeds almost always rejected
 
+## Step 5.5: Generate Verification Block
+
+For each acceptance criterion identified in the spec:
+
+1. **Assign criterion IDs**: Auto-generate sequential IDs (AC-1, AC-2, etc.) for each acceptance criterion
+2. **Identify test files**: Using `seeds/testing.yaml`, determine which test files should verify each criterion
+3. **Generate test names**: Create descriptive test names following the convention: "should {expected behavior} when {condition}"
+4. **Map fixtures**: Identify which fixtures from `seeds/testing.yaml` are relevant
+5. **Determine run command**: Select the appropriate test command from `seeds/testing.yaml`
+
+The verification block enables test-driven development by linking requirements to tests.
+
 ## Step 6: Generate keeper_decision
 
 Create the decision file with this EXACT format:
@@ -121,6 +134,21 @@ keeper_decision:
 
   constraints:
     - <specific implementation constraints for polecats>
+
+  verification:
+    test_files:
+      - file: <path/to/test/file.test.ts>
+        action: <extend|create|modify>
+    criteria:
+      - id: AC-1
+        criterion: "<acceptance criterion description>"
+        test_name: "should <expected behavior> when <condition>"
+      - id: AC-2
+        criterion: "<acceptance criterion description>"
+        test_name: "should <expected behavior> when <condition>"
+    fixtures:
+      - <fixture names from testing.yaml>
+    run_command: "<command from testing.yaml>"
 
   rationale: |
     <explanation of decision>
