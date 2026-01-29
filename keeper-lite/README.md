@@ -19,12 +19,24 @@ Think of it as architectural code review, but proactive.
 ### Option 1: One-Line Install (Recommended)
 
 ```bash
-# Install to current directory
+# Install to current directory (auto-enforcement)
 curl -fsSL https://raw.githubusercontent.com/jeremykalmus/keeper/main/keeper-lite/install.sh | bash
 
-# Or install to a specific project
-curl -fsSL https://raw.githubusercontent.com/jeremykalmus/keeper/main/keeper-lite/install.sh | bash -s -- ~/my-project
+# Install with specific enforcement level
+curl -fsSL ... | bash -s -- --enforcement auto ~/my-project      # Auto-enforce (default)
+curl -fsSL ... | bash -s -- --enforcement reminder ~/my-project  # Suggest only
+curl -fsSL ... | bash -s -- --enforcement off ~/my-project       # Manual only
 ```
+
+#### Enforcement Levels
+
+| Level | Behavior |
+|-------|----------|
+| `auto` | Claude automatically runs `/keeper-review` before implementing new features |
+| `reminder` | Claude suggests running `/keeper-review` but doesn't block |
+| `off` | Keeper only runs when you explicitly call `/keeper-*` commands |
+
+To change enforcement later, edit `CLAUDE.md` and find `<!-- KEEPER_ENFORCEMENT: level -->`
 
 ### Option 2: Manual Install
 
@@ -89,6 +101,23 @@ Keeper produces a decision (approved/rejected) with specific constraints.
 | `/keeper-plant` | Scan codebase, populate seeds |
 | `/keeper-review <feature>` | Review feature against seeds |
 | `/keeper-tend` | Check recent changes for undocumented patterns |
+
+## Auto-Enforcement
+
+When enforcement is set to `auto`, Claude will automatically run `/keeper-review` before implementing new features.
+
+**Triggers Keeper review when you ask to:**
+- "Add", "create", "implement", or "build" a new feature
+- Create new components, hooks, routes, services, or types
+- Add new API endpoints or database fields
+- Implement functionality touching 3+ files
+
+**Skips Keeper review for:**
+- Bug fixes in existing code
+- Small tweaks (styling, copy changes)
+- Refactoring without new patterns
+- Config, docs, comments
+- One-off scripts
 
 ## Modes
 

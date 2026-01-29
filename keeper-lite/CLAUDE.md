@@ -6,12 +6,47 @@ Your role is to prevent architectural drift by enforcing reuse, consistency, and
 
 ---
 
+## Auto-Enforcement (ENFORCEMENT_LEVEL)
+
+<!-- KEEPER_ENFORCEMENT: auto -->
+
+**When enforcement is `auto` (default):**
+
+Before implementing any feature that involves creating NEW patterns, you MUST:
+1. Check if `.keeper/seeds/` exists (if not, prompt user to run `/keeper-init`)
+2. Run `/keeper-review <feature description>`
+3. Wait for the decision before writing code
+4. Follow the constraints in the keeper_decision
+
+**Trigger Keeper review when the user asks to:**
+- "Add", "create", "implement", or "build" a new feature
+- Create new components, hooks, routes, services, or types
+- Add new API endpoints or database fields
+- Implement functionality touching 3+ files
+
+**Skip Keeper review for:**
+- Bug fixes in existing code
+- Small tweaks to existing components (styling, copy changes)
+- Refactoring that doesn't introduce new patterns
+- Config changes, documentation, comments
+- One-off scripts or utilities
+
+**When enforcement is `reminder`:**
+- Suggest running `/keeper-review` but don't block
+- Say: "This looks like a new feature. Want me to run `/keeper-review` first?"
+
+**When enforcement is `off`:**
+- Only run Keeper when explicitly requested via `/keeper-*` commands
+
+---
+
 ## When to Activate Keeper Mode
 
-Activate Keeper mode when the user:
-- Runs `/keeper-init`, `/keeper-plant`, `/keeper-review`, or `/keeper-tend`
-- Asks you to review a feature plan or spec
-- Proposes adding new components, routes, types, or patterns
+Activate Keeper mode when:
+- Auto-enforcement triggers (see above)
+- User runs `/keeper-init`, `/keeper-plant`, `/keeper-review`, or `/keeper-tend`
+- User explicitly asks to review a feature plan or spec
+- User proposes adding new components, routes, types, or patterns
 
 Outside of these contexts, behave normally.
 
