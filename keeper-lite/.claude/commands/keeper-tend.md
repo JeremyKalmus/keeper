@@ -1,6 +1,6 @@
 ---
-description: Check for undocumented patterns in recently modified files
-allowed-tools: Read,Write,Glob,Grep,Bash(ls:*),Bash(find:*),Bash(date:*),Bash(git:*)
+description: Check for undocumented patterns in recently modified files using a sub-agent
+allowed-tools: Read,Write,Glob,Grep,Bash(ls:*),Bash(find:*),Bash(date:*),Bash(git:*),Task
 argument-hint: [--days N] [--mode seeding|growth]
 ---
 
@@ -30,7 +30,7 @@ If `--mode` argument provided, use that instead.
 
 Parse `--days N` from arguments. Default to 7 days.
 
-## Step 3: Determine Change Detection Method
+## Step 3: Find Recently Changed Files
 
 Check if git is available:
 
@@ -40,177 +40,145 @@ git rev-parse --git-dir 2>/dev/null
 
 ### If Git Available
 
-Use git to find recently changed files:
-
 ```bash
 git diff --name-only HEAD~20 -- '*.ts' '*.tsx' '*.js' '*.jsx' 2>/dev/null | head -50
 ```
 
-Or by date:
-```bash
-git log --oneline --since="7 days ago" --name-only | grep -E '\.(ts|tsx|js|jsx)$' | sort -u | head -50
-```
-
 ### If No Git (OneDrive/Local)
 
-Fall back to file modification times using `find`:
-
 ```bash
-find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -mtime -7 2>/dev/null | grep -v node_modules | grep -v .keeper | head -50
+find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) -mtime -7 2>/dev/null | grep -v node_modules | grep -v .keeper | head -50
 ```
 
-Where `-mtime -7` means modified in last 7 days. Adjust based on `--days` argument.
+**Collect the list of changed files** - you'll pass this to the sub-agent.
 
-## Step 4: Load Current Seeds
+## Step 4: Launch Tend Sub-Agent
 
-Read all seed files and build inventory of documented patterns:
-
-- `.keeper/seeds/frontend.yaml` → components, hooks, stores
-- `.keeper/seeds/backend.yaml` → routes, services
-- `.keeper/seeds/data.yaml` → types, enums, schemas
-- `.keeper/seeds/auth.yaml` → auth patterns
-
-## Step 5: Scan Changed Files for Patterns
-
-For each changed file, check for seedable patterns:
-
-### Component Pattern (tsx/jsx files)
-Look for: `export (default )?function \w+` or `export const \w+ =`
-
-### Hook Pattern
-Look for: `export function use\w+`
-
-### Enum Pattern
-Look for: `enum \w+` or `type \w+ =` with union literals
-
-### Service Pattern
-Look for: `class \w+Service` or `Service =`
-
-### Route Pattern
-Look for: `GET|POST|PUT|DELETE|PATCH` handlers
-
-## Step 6: Cross-Reference with Seeds
-
-For each detected pattern:
-1. Check if it exists in the corresponding seed file
-2. If not found, mark as **undocumented**
-
-## Step 7: Generate Report
+**CRITICAL**: Use a sub-agent to analyze changed files against seeds.
+This keeps seed content out of your context.
 
 ```
-KEEPER TEND: <date>
+Use Task tool with subagent_type="general-purpose" and prompt:
 
-Detection method: <git|file timestamps>
-Scanned: N files modified in last D days
-Mode: <seeding|growth|conservation>
+"You are a Keeper tend agent. Your job is to find UNDOCUMENTED patterns
+in recently changed files by comparing against the seed vault.
 
-─────────────────────────────────────
-UNDOCUMENTED PATTERNS FOUND
-─────────────────────────────────────
+CHANGED FILES:
+<paste the list of changed files here>
 
-Frontend:
-  [x] NewComponent (src/ui/NewComponent.tsx)
-      Type: component
-      Last modified: <date>
-  [x] useNewHook (src/hooks/useNewHook.ts)
-      Type: hook
-      Last modified: <date>
+KEEPER MODE: <mode from config>
 
-Backend:
-  [x] /api/new-route (src/api/new-route.ts)
-      Methods: POST, GET
-      Last modified: <date>
+TASK:
+1. Read ALL seed files to know what's already documented:
+   - .keeper/seeds/frontend.yaml
+   - .keeper/seeds/backend.yaml
+   - .keeper/seeds/data.yaml
+   - .keeper/seeds/auth.yaml
 
-Data:
-  [x] NewEnum (src/types/enums.ts)
-      Values: VALUE_A, VALUE_B
-      Last modified: <date>
+2. For EACH changed file, scan for patterns:
+   - Components: export function/const ComponentName
+   - Hooks: export function useXxx
+   - Enums: enum EnumName or type X = 'a' | 'b'
+   - Services: class XxxService
+   - Routes: GET/POST/PUT/DELETE handlers
 
-Already Documented: N patterns (not shown)
+3. Cross-reference with seeds:
+   - If pattern exists in seeds → Already documented (skip)
+   - If pattern NOT in seeds → Undocumented (report it)
 
-─────────────────────────────────────
+4. Return a STRUCTURED RESPONSE:
+
+```yaml
+tend_report:
+  detection_method: <git|file_timestamps>
+  files_scanned: <N>
+  mode: <seeding|growth|conservation>
+
+  undocumented:
+    frontend:
+      - name: <ComponentName>
+        type: component|hook|store
+        location: <file path>
+      - name: <useHookName>
+        type: hook
+        location: <file path>
+    backend:
+      - name: <route or service>
+        type: route|service
+        location: <file path>
+        methods: [GET, POST]  # if route
+    data:
+      - name: <TypeName>
+        type: enum|type|schema
+        location: <file path>
+        values: [A, B]  # if enum
+    auth:
+      - name: <pattern>
+        type: scope|role|middleware
+        location: <file path>
+
+  already_documented: <N patterns skipped>
 ```
 
-## Step 8: Take Action Based on Mode
+IMPORTANT:
+- Return ONLY the yaml block above
+- Do NOT include already-documented patterns in detail
+- Only report patterns that are MISSING from seeds"
+```
+
+## Step 5: Process Sub-Agent Response
+
+The sub-agent returns only undocumented patterns. Use this to:
 
 ### Seeding Mode
 
-Auto-add undocumented patterns to seed files:
-
-```yaml
-  NewComponent:  # auto-added by keeper-tend <date>
-    location: path/to/file.tsx
-    variants: [default]
-    when_to_use: "TODO: describe usage"
-```
-
-Report:
-```
-ADDED to seeds:
-  - NewComponent → frontend.yaml
-  - useNewHook → frontend.yaml
-  - NewEnum → data.yaml
-
-Review .keeper/seeds/*.yaml and complete TODO descriptions.
-```
+Auto-add undocumented patterns to seed files. For each pattern:
+- Add to appropriate seed file with `# auto-added by keeper-tend`
+- Set `when_to_use: "TODO: describe usage"`
 
 ### Growth/Conservation Mode
 
-Do NOT auto-add. Instead suggest:
+Output suggestions but do NOT auto-add:
 
 ```
 SUGGESTED ADDITIONS (manual review required):
 
 1. Add to .keeper/seeds/frontend.yaml:
-   NewComponent:
-     location: src/ui/NewComponent.tsx
+   ComponentName:
+     location: src/ui/Component.tsx
      variants: [default]
      when_to_use: "TODO"
 
-2. Add to .keeper/seeds/data.yaml:
-   NewEnum:
-     values: [VALUE_A, VALUE_B]
-     location: src/types/enums.ts
-     append_only: true
-     when_to_use: "TODO"
-
-To add these patterns, either:
-- Run /keeper-tend --mode seeding to auto-add
-- Manually edit the seed files
-- Run /keeper-plant for full rediscovery
+To add: Run /keeper-tend --mode seeding or edit manually.
 ```
 
-## Step 9: Update Last Tend Timestamp
+## Step 6: Update Last Tend Timestamp
 
-Update `.keeper/config.json` with last tend date:
-
+Update `.keeper/config.json`:
 ```json
 {
   "keeper": {
-    "mode": "growth",
     "last_tend": "2024-01-15T10:30:00Z"
   }
 }
 ```
 
-## Step 10: Summary
+## Step 7: Summary
 
 ```
 KEEPER TEND COMPLETE
 
+Detection: <git|file timestamps>
 Files scanned: N
 Undocumented patterns: N
 [Seeding: Added to vault | Growth: Suggestions above]
 
-Tip: Run /keeper-tend regularly to keep seeds current.
-     Run /keeper-plant for full codebase discovery.
-     Run /keeper-review before implementing new features.
+Next: Review .keeper/seeds/*.yaml
+      Run /keeper-review before implementing new features
 ```
 
 ## Performance Notes
 
-- This command should complete quickly (< 30 seconds)
-- Uses file timestamps when git unavailable
+- Uses sub-agent to keep your context clean
 - Limits scan to recent changes only
-- Run weekly or after major development sprints
-- Use `/keeper-plant` for comprehensive discovery
+- Run weekly or after development sprints

@@ -1,6 +1,6 @@
 ---
-description: Review a feature plan against the Seed Vault and produce a keeper_decision
-allowed-tools: Read,Write,Glob,Bash(ls:*),Bash(date:*)
+description: Review a feature plan against the Seed Vault using a sub-agent
+allowed-tools: Read,Write,Glob,Bash(ls:*),Bash(date:*),Task
 argument-hint: <feature description or spec file path>
 ---
 
@@ -21,103 +21,130 @@ If no seeds found, abort with:
 ERROR: Seed vault is empty. Run /keeper-init and /keeper-plant first.
 ```
 
-## Step 2: Load Configuration and Seeds
+## Step 2: Load Configuration
 
-Read `.keeper/config.json` for current mode.
-
-Read all seed files:
-- `.keeper/seeds/frontend.yaml`
-- `.keeper/seeds/backend.yaml`
-- `.keeper/seeds/data.yaml`
-- `.keeper/seeds/auth.yaml`
+Read `.keeper/config.json` for current mode (seeding/growth/conservation).
 
 ## Step 3: Parse the Feature Request
 
 If $ARGUMENTS is a file path, read the file.
 Otherwise, treat $ARGUMENTS as the feature description.
 
-For the feature, identify ALL proposed:
-- New UI components or component variants
-- New API routes or route modifications
-- New database fields, enums, or schema changes
-- New auth patterns or permission scopes
-- New services or utilities
+Note the feature description - you'll pass this to the sub-agent.
 
-## Step 4: Apply the Four Canonical Questions
+## Step 4: Launch Seed Analysis Sub-Agent
 
-For **EACH** proposed element, answer:
+**CRITICAL**: Use a sub-agent to analyze seeds. This keeps full seed content
+out of your context - you only receive the relevant patterns.
 
-### Question 1: What already exists?
+```
+Use Task tool with subagent_type="general-purpose" and prompt:
 
-Check the relevant seed file. List any matching or similar patterns:
-- Same name?
-- Similar purpose?
-- Overlapping functionality?
+"You are a Keeper seed analysis agent. Your job is to find RELEVANT patterns
+for a specific feature and apply the Keeper decision matrices.
 
-### Question 2: Is it sufficient?
+FEATURE TO ANALYZE:
+<paste the feature description here>
 
-Does the existing pattern cover the use case?
-- If **yes**: Use it. Stop here for this element.
-- If **no**: Continue to Question 3.
+KEEPER MODE: <mode from config.json>
 
-### Question 3: What is the smallest extension?
+TASK:
+1. Read ALL seed files:
+   - .keeper/seeds/frontend.yaml
+   - .keeper/seeds/backend.yaml
+   - .keeper/seeds/data.yaml
+   - .keeper/seeds/auth.yaml
 
-Can the existing pattern be extended?
-- Add a variant?
-- Add a field?
-- Add a method?
+2. Identify what the feature NEEDS:
+   - UI components required
+   - API routes required
+   - Data types/enums required
+   - Auth patterns required
 
-Prefer extension over creation. Document the minimal change.
+3. For EACH need, check the seeds and apply the Four Questions:
+   Q1: What already exists? (check seeds)
+   Q2: Is it sufficient? (does it cover the use case?)
+   Q3: If not, what's the smallest extension?
+   Q4: If new seed required, justify why
 
-### Question 4: If a new seed is required, how is it preserved?
+4. Apply Decision Matrices:
 
-If nothing exists and no extension works:
-- Justify why this is truly new
-- Define how it will be documented in seeds
-- Consider if this should be local-only (not promoted to seed)
+   Frontend:
+   - Component exists? → Use it
+   - Variant fits? → Use variant
+   - Need extension? → Extend (reject if breaks design system)
 
-## Step 5: Apply Decision Matrices
+   Backend:
+   - Route exists for resource? → Extend it
+   - Backward compatible? → Modify (else new route)
+   - Matches REST? → Approve (else reject)
 
-### Frontend Components
+   Data:
+   - Type/enum exists? → Extend it
+   - Enum extension append-only? → OK (else reject)
 
-| Question | Yes | No |
-|----------|-----|----|
-| Component exists in seeds? | Use it | Continue |
-| Variant fits use case? | Use variant | Extend variant |
-| Extension breaks design system? | **REJECT** | Approve |
+   Auth:
+   - Auth pattern exists? → Use it (else BLOCK)
+   - New permission? → Add scope (reject new roles)
 
-### API Routes
+5. Return a STRUCTURED RESPONSE with ONLY:
 
-| Question | Yes | No |
-|----------|-----|----|
-| Route exists with same resource? | Extend | Continue |
-| Extension is backward-compatible? | Modify | New route |
-| New route matches REST conventions? | Approve | **REJECT** |
+```yaml
+analysis:
+  feature: '<feature name>'
+  mode: <seeding|growth|conservation>
 
-### Database/Types
+  reuse:
+    frontend:
+      - name: <component>
+        location: <path>
+        reason: '<why this fits>'
+    backend:
+      - name: <route/service>
+        location: <path>
+        reason: '<why this fits>'
+    data:
+      - name: <type/enum>
+        location: <path>
+        reason: '<why this fits>'
 
-| Question | Yes | No |
-|----------|-----|----|
-| Type/enum exists in seeds? | Extend | Continue |
-| Extension append-only (enums)? | OK | **REJECT** |
-| New type scoped appropriately? | Approve | Make global |
+  extensions:
+    frontend:
+      - component: <name>
+        extension: '<what to add>'
+        justification: '<why extend vs create>'
+    backend:
+      - route: <path>
+        extension: '<what to add>'
+    data:
+      - type: <name>
+        extension: '<what to add>'
 
-### Auth
+  new_seeds_required:
+    - type: <component|route|enum|service|type>
+      name: <proposed name>
+      justification: '<why nothing existing works>'
 
-| Question | Yes | No |
-|----------|-----|----|
-| Auth pattern exists in seeds? | Use it | **BLOCK** |
-| New permission required? | Add scope | Reject new role |
+  forbidden:
+    - '<pattern that must NOT be used>'
 
-## Step 6: Consider Keeper Mode
+  recommendation: approved|rejected|deferred
+  rationale: '<1-2 sentence explanation>'
+```
 
-Adjust strictness based on mode from config.json:
+IMPORTANT:
+- Return ONLY the yaml block above - no extra commentary
+- Include ONLY patterns relevant to this specific feature
+- Do NOT include the full seed file contents
+- Be conservative: prefer reuse over extension, extension over creation"
+```
 
-- **seeding**: Allow new seeds freely, warn instead of block
-- **growth**: Reuse-first, extensions preferred, new seeds need justification
-- **conservation**: New seeds almost always rejected
+## Step 5: Process Sub-Agent Response
 
-## Step 7: Generate keeper_decision
+The sub-agent returns a structured analysis with only relevant patterns.
+Use this to generate the final keeper_decision.
+
+## Step 6: Generate keeper_decision
 
 Determine the next decision ID:
 ```bash
