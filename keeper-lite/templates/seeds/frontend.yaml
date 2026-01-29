@@ -1,0 +1,119 @@
+# Frontend Seed Registry
+# Machine-readable registry of approved UI components, hooks, and patterns
+# Keeper uses this to enforce reuse before extension
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+# UI components approved for reuse across the project.
+# Before creating a new component, check if one exists here.
+
+components:
+  # Example entry (uncomment and modify):
+  # Button:
+  #   variants: [primary, secondary, danger, ghost]
+  #   location: src/ui/Button.tsx
+  #   when_to_use: "Any clickable action that triggers behavior"
+  #   forbidden_patterns:
+  #     - custom colors outside design tokens
+  #     - inline styles
+  #     - wrapping in additional divs
+
+  # Modal:
+  #   variants: [dialog, drawer, fullscreen]
+  #   location: src/ui/Modal.tsx
+  #   when_to_use: "Blocking decisions requiring user focus"
+  #   forbidden_patterns:
+  #     - nested modals
+  #     - auto-dismiss without user action
+  #     - modals for simple confirmations (use toast)
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+# Custom React/Vue hooks for shared logic.
+# Prefer using existing hooks over creating new ones.
+
+hooks:
+  # Example entry:
+  # useAuth:
+  #   location: src/hooks/useAuth.ts
+  #   purpose: "Access current user auth state"
+  #   returns: "{ user, isAuthenticated, isLoading, login, logout }"
+  #   forbidden_patterns:
+  #     - storing tokens in hook state
+  #     - exposing raw tokens to components
+  #     - calling auth APIs directly (use auth service)
+
+  # useLocalStorage:
+  #   location: src/hooks/useLocalStorage.ts
+  #   purpose: "Persistent state backed by localStorage"
+  #   returns: "[value, setValue, removeValue]"
+  #   forbidden_patterns:
+  #     - storing sensitive data
+  #     - storing large objects (> 1KB)
+
+# ============================================================================
+# STATE STORES
+# ============================================================================
+# Global state management patterns (Redux, Zustand, Context, etc.)
+
+state_stores:
+  # Example entry:
+  # userStore:
+  #   type: zustand  # or: redux, context, jotai, recoil
+  #   location: src/stores/userStore.ts
+  #   purpose: "Current user state and preferences"
+  #   forbidden_patterns:
+  #     - storing auth tokens (use auth service)
+  #     - direct API calls (use services layer)
+  #     - derived state that should be computed
+
+# ============================================================================
+# DESIGN TOKENS
+# ============================================================================
+# Design system tokens for consistent styling
+
+design_tokens:
+  # location: src/ui/tokens/
+  # format: css-vars  # or: tailwind, styled-components, sass-vars
+
+  colors:
+    # Approved color tokens only - no arbitrary values
+    # primary: "--color-primary"
+    # secondary: "--color-secondary"
+    # danger: "--color-danger"
+    # success: "--color-success"
+    # warning: "--color-warning"
+    # neutral: "--color-neutral-{100-900}"
+
+  spacing:
+    # Approved spacing scale
+    # values: [0, 1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64]
+    # unit: "px"  # or: rem
+
+  typography:
+    # font_families: [sans, mono]
+    # font_sizes: [xs, sm, base, lg, xl, 2xl, 3xl]
+
+  forbidden_patterns:
+    - arbitrary color values (use tokens)
+    - magic number spacing (use scale)
+    - custom font families (use system)
+    - inline styles for layout
+
+# ============================================================================
+# I18N KEYS (if applicable)
+# ============================================================================
+# Internationalization key namespaces to prevent duplication
+
+i18n_keys:
+  # common:
+  #   prefix: "common."
+  #   owner: "design-system"
+  #   keys: [save, cancel, loading, error, success]
+
+  # forbidden_patterns:
+  #   - hardcoded user-facing strings
+  #   - inline template literals for UI text
+  #   - duplicate keys across namespaces

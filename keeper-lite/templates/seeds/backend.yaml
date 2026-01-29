@@ -1,0 +1,139 @@
+# Backend Seed Registry
+# Machine-readable registry of approved API routes, services, and patterns
+# Keeper uses this to enforce reuse before extension
+
+# ============================================================================
+# ROUTES
+# ============================================================================
+# API routes/endpoints approved for the project.
+# Before creating a new route, check if one exists or can be extended.
+
+routes:
+  # Example entry:
+  # /api/users:
+  #   methods: [GET, POST]
+  #   auth: required
+  #   location: src/api/users/route.ts
+  #   when_to_use: "User CRUD operations"
+  #   response_shape:
+  #     GET: "{ users: User[], total: number }"
+  #     POST: "{ user: User }"
+  #   forbidden_patterns:
+  #     - returning passwords or tokens
+  #     - unbounded list queries (require pagination)
+
+  # /api/users/[id]:
+  #   methods: [GET, PUT, DELETE]
+  #   auth: required
+  #   location: src/api/users/[id]/route.ts
+  #   when_to_use: "Single user operations"
+
+# ============================================================================
+# SERVICES
+# ============================================================================
+# Business logic services. Routes should delegate to services.
+
+services:
+  # Example entry:
+  # UserService:
+  #   location: src/services/UserService.ts
+  #   purpose: "User account management and queries"
+  #   dependencies: [DatabaseService, EmailService]
+  #   methods:
+  #     - getById(id): User | null
+  #     - create(data): User
+  #     - update(id, data): User
+  #     - delete(id): void
+  #   forbidden_patterns:
+  #     - direct HTTP calls (use dedicated client service)
+  #     - direct database queries (use repository pattern)
+
+  # EmailService:
+  #   location: src/services/EmailService.ts
+  #   purpose: "Email sending and templates"
+  #   forbidden_patterns:
+  #     - hardcoded email templates
+  #     - synchronous sending (use queue)
+
+# ============================================================================
+# ERROR TYPES
+# ============================================================================
+# Standardized error types for consistent error handling
+
+error_types:
+  # Example entries:
+  # NotFoundError:
+  #   code: NOT_FOUND
+  #   http_status: 404
+  #   when_to_use: "Resource does not exist"
+
+  # ValidationError:
+  #   code: VALIDATION_FAILED
+  #   http_status: 400
+  #   when_to_use: "Input validation failed"
+
+  # UnauthorizedError:
+  #   code: UNAUTHORIZED
+  #   http_status: 401
+  #   when_to_use: "Missing or invalid auth"
+
+  # ForbiddenError:
+  #   code: FORBIDDEN
+  #   http_status: 403
+  #   when_to_use: "Auth valid but lacks permission"
+
+  forbidden_patterns:
+    - generic "Error" without code
+    - exposing stack traces to clients
+    - inconsistent error shapes
+
+# ============================================================================
+# EVENTS
+# ============================================================================
+# Domain events for async communication (if using event-driven architecture)
+
+events:
+  # Example entry:
+  # UserCreated:
+  #   schema:
+  #     userId: string
+  #     email: string
+  #     createdAt: ISO8601
+  #   when_to_emit: "After successful user registration"
+  #   consumers: [EmailService, AnalyticsService]
+
+  # forbidden_patterns:
+  #   - PII in event payloads (use IDs, fetch as needed)
+  #   - events without schemas
+  #   - synchronous event handling
+
+# ============================================================================
+# LOGGING PATTERNS
+# ============================================================================
+# Structured logging conventions
+
+logging:
+  # format: structured-json  # or: plain-text
+  # levels: [debug, info, warn, error]
+  # required_fields: [timestamp, level, message, requestId]
+
+  forbidden_patterns:
+    - console.log in production code
+    - logging PII (passwords, tokens, full emails)
+    - unstructured log messages
+
+# ============================================================================
+# MIDDLEWARE
+# ============================================================================
+# Request/response middleware patterns
+
+middleware:
+  # Example entry:
+  # authMiddleware:
+  #   location: src/middleware/auth.ts
+  #   purpose: "Validate JWT and attach user to request"
+  #   applies_to: "Routes requiring auth"
+
+  # rateLimitMiddleware:
+  #   location: src/middleware/rateLimit.ts
+  #   purpose: "Prevent abuse with request rate limiting"

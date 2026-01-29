@@ -1,0 +1,169 @@
+# Auth Seed Registry
+# Machine-readable registry of authentication and authorization patterns
+# Keeper uses this to enforce consistent auth across the project
+
+# ============================================================================
+# AUTH MODEL
+# ============================================================================
+# The single source of truth for authentication approach.
+# NEVER create parallel auth systems.
+
+auth_model:
+  # Choose ONE:
+  # type: jwt
+  # type: session
+  # type: oauth
+
+  # Example JWT config:
+  # type: jwt
+  # location: src/auth/jwt.ts
+  # token_shape:
+  #   required_claims: [sub, iat, exp, iss]
+  #   custom_claims: [userId, email, roles]
+  #   forbidden_claims: [password, apiKey]
+  # expiry:
+  #   access: 15m
+  #   refresh: 7d
+  # storage: httpOnly cookie  # or: localStorage (not recommended)
+
+  # Example session config:
+  # type: session
+  # location: src/auth/session.ts
+  # store: redis  # or: database, memory
+  # expiry: 24h
+  # rotation: true
+
+  forbidden_patterns:
+    - multiple auth systems
+    - storing tokens in localStorage
+    - tokens without expiry
+    - passwords in tokens/sessions
+
+# ============================================================================
+# SCOPES
+# ============================================================================
+# Permission scopes for fine-grained access control
+
+scopes:
+  # Example entries:
+  # read:users:
+  #   grants: "View user profiles and lists"
+  #   required_for: [GET /api/users, GET /api/users/:id]
+
+  # write:users:
+  #   grants: "Create and modify user accounts"
+  #   required_for: [POST /api/users, PUT /api/users/:id]
+
+  # delete:users:
+  #   grants: "Delete user accounts"
+  #   required_for: [DELETE /api/users/:id]
+  #   note: "Admin only"
+
+  # admin:
+  #   grants: "Full system access"
+  #   includes: [read:users, write:users, delete:users, ...]
+  #   note: "Use sparingly"
+
+  forbidden_patterns:
+    - overly broad scopes
+    - scopes without documentation
+    - action-only scopes (prefer resource:action format)
+
+# ============================================================================
+# ROLES
+# ============================================================================
+# User roles that bundle scopes together
+
+roles:
+  # Example entries:
+  # user:
+  #   scopes: [read:own-profile, write:own-profile]
+  #   description: "Standard authenticated user"
+
+  # moderator:
+  #   inherits_from: user
+  #   scopes: [read:users, write:content-flags]
+  #   description: "Content moderation capabilities"
+
+  # admin:
+  #   inherits_from: moderator
+  #   scopes: [write:users, delete:users, read:analytics]
+  #   description: "Full administrative access"
+
+  # superadmin:
+  #   scopes: [admin]  # Everything
+  #   description: "System owner only"
+  #   note: "Limit to 1-2 accounts"
+
+  forbidden_patterns:
+    - roles without scope definitions
+    - overlapping role hierarchies
+    - role names that don't match purpose
+
+# ============================================================================
+# MIDDLEWARE
+# ============================================================================
+# Auth-related middleware patterns
+
+middleware:
+  # Example entries:
+  # requireAuth:
+  #   location: src/middleware/auth.ts
+  #   purpose: "Verify token and attach user to request"
+  #   usage: "Apply to all protected routes"
+  #   rejects_with: 401 Unauthorized
+
+  # requireScope:
+  #   location: src/middleware/auth.ts
+  #   purpose: "Check user has required scope(s)"
+  #   usage: "requireScope('write:users')"
+  #   rejects_with: 403 Forbidden
+
+  # requireRole:
+  #   location: src/middleware/auth.ts
+  #   purpose: "Check user has required role"
+  #   usage: "requireRole('admin')"
+  #   rejects_with: 403 Forbidden
+
+  forbidden_patterns:
+    - inline auth checks (use middleware)
+    - role checks without scope checks
+    - hardcoded user IDs for access
+
+# ============================================================================
+# API KEYS (if applicable)
+# ============================================================================
+# For service-to-service or external API access
+
+api_keys:
+  # format: "prefix_randomstring"  # e.g., "sk_live_abc123..."
+  # storage: hashed in database
+  # scopes: same as user scopes
+  # rotation: manual or scheduled
+
+  forbidden_patterns:
+    - plaintext API key storage
+    - API keys without scopes
+    - shared API keys between services
+
+# ============================================================================
+# OAUTH PROVIDERS (if applicable)
+# ============================================================================
+# Third-party OAuth/SSO integrations
+
+oauth_providers:
+  # Example:
+  # google:
+  #   client_id: env.GOOGLE_CLIENT_ID
+  #   scopes: [email, profile]
+  #   callback: /api/auth/google/callback
+
+  # github:
+  #   client_id: env.GITHUB_CLIENT_ID
+  #   scopes: [user:email]
+  #   callback: /api/auth/github/callback
+
+  forbidden_patterns:
+    - OAuth without PKCE
+    - storing provider tokens long-term
+    - auto-linking accounts without verification

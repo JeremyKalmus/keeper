@@ -1,0 +1,17 @@
+{
+  "keeper": {
+    "mode": "seeding",
+    "version": "1.0.0",
+    "initialized": "2024-01-01T00:00:00Z",
+    "last_plant": null,
+    "last_tend": null
+  },
+  "seed_vault": {
+    "frontend": "seeds/frontend.yaml",
+    "backend": "seeds/backend.yaml",
+    "data": "seeds/data.yaml",
+    "auth": "seeds/auth.yaml"
+  },
+  "decisions_dir": "decisions/",
+  "recommendations_dir": "recommendations/"
+}

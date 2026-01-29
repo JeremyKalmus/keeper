@@ -1,0 +1,141 @@
+# Data Seed Registry
+# Machine-readable registry of approved types, enums, and schemas
+# Keeper uses this to enforce reuse before extension
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+# Enumerated types. Enums should be append-only after initial creation.
+# NEVER remove or rename enum values - only add new ones.
+
+enums:
+  # Example entries:
+  # UserStatus:
+  #   values: [active, inactive, pending, suspended]
+  #   location: src/types/enums.ts
+  #   append_only: true
+  #   when_to_use: "User account status tracking"
+  #   forbidden_extensions:
+  #     - removing existing values
+  #     - renaming values
+  #     - values with spaces or special chars
+
+  # OrderStatus:
+  #   values: [draft, submitted, processing, shipped, delivered, cancelled]
+  #   location: src/types/enums.ts
+  #   append_only: true
+  #   when_to_use: "Order lifecycle tracking"
+
+# ============================================================================
+# TYPES
+# ============================================================================
+# TypeScript types and interfaces for shared data structures
+
+types:
+  # Example entries:
+  # User:
+  #   location: src/types/user.ts
+  #   purpose: "Core user entity"
+  #   shape: |
+  #     {
+  #       id: string
+  #       email: string
+  #       name: string
+  #       status: UserStatus
+  #       createdAt: Date
+  #     }
+  #   forbidden_extensions:
+  #     - adding nullable fields without migration
+  #     - changing field types
+
+  # ApiResponse<T>:
+  #   location: src/types/api.ts
+  #   purpose: "Standard API response wrapper"
+  #   shape: |
+  #     {
+  #       data: T
+  #       meta?: { total?: number, page?: number }
+  #       error?: { code: string, message: string }
+  #     }
+  #   when_to_use: "All API responses should use this shape"
+
+# ============================================================================
+# VALIDATION SCHEMAS
+# ============================================================================
+# Runtime validation schemas (Zod, Yup, Joi, etc.)
+
+schemas:
+  # Example entries:
+  # CreateUserSchema:
+  #   library: zod  # or: yup, joi
+  #   location: src/schemas/user.ts
+  #   validates: "User creation input"
+  #   fields:
+  #     email: "z.string().email()"
+  #     name: "z.string().min(2).max(100)"
+  #     password: "z.string().min(8)"
+
+  # UpdateUserSchema:
+  #   library: zod
+  #   location: src/schemas/user.ts
+  #   validates: "User update input (partial)"
+  #   note: "Uses CreateUserSchema.partial()"
+
+  forbidden_patterns:
+    - inline validation (use schemas)
+    - inconsistent validation between client/server
+    - schemas without error messages
+
+# ============================================================================
+# DATABASE TABLES
+# ============================================================================
+# Database table definitions (Prisma, Drizzle, TypeORM, raw SQL)
+
+tables:
+  # Example entries:
+  # users:
+  #   location: prisma/schema.prisma  # or: src/db/schema.ts
+  #   purpose: "User accounts"
+  #   primary_key: id (uuid)
+  #   indexes: [email (unique)]
+  #   relations:
+  #     - orders: one-to-many
+  #     - profile: one-to-one
+
+  # orders:
+  #   location: prisma/schema.prisma
+  #   purpose: "Customer orders"
+  #   primary_key: id (uuid)
+  #   indexes: [userId, status, createdAt]
+  #   relations:
+  #     - user: many-to-one
+  #     - items: one-to-many
+
+  forbidden_patterns:
+    - tables without primary keys
+    - missing indexes on foreign keys
+    - nullable fields without defaults
+    - destructive migrations (drop column/table)
+
+# ============================================================================
+# TYPE ALIASES
+# ============================================================================
+# Common type aliases for consistency
+
+type_aliases:
+  # Example entries:
+  # ID: "string"  # All IDs are strings (UUIDs)
+  # Timestamp: "string"  # ISO8601 format
+  # Email: "string"  # Validated email string
+  # Money: "{ amount: number, currency: string }"
+
+# ============================================================================
+# CONSTANTS
+# ============================================================================
+# Shared constants that shouldn't be duplicated
+
+constants:
+  # Example:
+  # MAX_PAGE_SIZE: 100
+  # DEFAULT_PAGE_SIZE: 20
+  # SUPPORTED_CURRENCIES: [USD, EUR, GBP]

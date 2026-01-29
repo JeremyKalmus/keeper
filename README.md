@@ -2,7 +2,28 @@
 
 Governance plugin for Gas Town that prevents architectural drift by enforcing reuse, consistency, and deliberate evolution across UI, API, data, and auth layers.
 
-## What It Does
+---
+
+## Keeper Lite (Standalone for Claude Code)
+
+**Don't use Gas Town?** Keeper Lite is a standalone version for Claude Code with no dependencies.
+
+```bash
+# One-line install
+curl -fsSL https://raw.githubusercontent.com/jeremykalmus/keeper/main/keeper-lite/install.sh | bash
+```
+
+**Features:**
+- No gastown/beads dependency
+- Git optional (works with OneDrive, Dropbox, etc.)
+- Single-agent workflow (no parallel sub-agents)
+- Same core functionality: `/keeper-init`, `/keeper-plant`, `/keeper-review`, `/keeper-tend`
+
+See [`keeper-lite/README.md`](keeper-lite/README.md) for full documentation.
+
+---
+
+## What It Does (Gas Town Version)
 
 The Keeper operates as a **dual-gate system**:
 
