@@ -38,6 +38,18 @@ curl -fsSL ... | bash -s -- --enforcement off ~/my-project       # Manual only
 
 To change enforcement later, edit `CLAUDE.md` and find `<!-- KEEPER_ENFORCEMENT: level -->`
 
+### Updating an Existing Installation
+
+```bash
+# Update to latest (backs up existing CLAUDE.md)
+curl -fsSL https://raw.githubusercontent.com/jeremykalmus/keeper/main/keeper-lite/install.sh | bash -s -- --update
+
+# Update with specific enforcement level
+curl -fsSL ... | bash -s -- --update --enforcement auto ~/my-project
+```
+
+The `--update` flag overwrites existing files but creates a backup of your CLAUDE.md first.
+
 ### Option 2: Manual Install
 
 Clone and copy:

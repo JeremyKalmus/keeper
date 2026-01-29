@@ -10,6 +10,10 @@
 #   curl -fsSL ... | bash -s -- --enforcement reminder ~/my-project
 #   curl -fsSL ... | bash -s -- --enforcement off .
 #
+#   Update existing installation:
+#   curl -fsSL ... | bash -s -- --update ~/my-project
+#   curl -fsSL ... | bash -s -- --update --enforcement auto ~/my-project
+#
 # Enforcement levels:
 #   auto     - Claude automatically runs /keeper-review before new features (default)
 #   reminder - Claude suggests running /keeper-review but doesn't block
@@ -30,6 +34,7 @@ GITHUB_RAW="https://raw.githubusercontent.com/jeremykalmus/keeper/main/keeper-li
 # Defaults
 ENFORCEMENT="auto"
 TARGET_DIR="."
+UPDATE_MODE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -40,6 +45,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --enforcement=*)
             ENFORCEMENT="${1#*=}"
+            shift
+            ;;
+        --update)
+            UPDATE_MODE=true
             shift
             ;;
         *)
@@ -57,6 +66,9 @@ if [[ ! "$ENFORCEMENT" =~ ^(auto|reminder|off)$ ]]; then
 fi
 
 echo -e "${GREEN}Keeper Lite Installer${NC}"
+if [ "$UPDATE_MODE" = true ]; then
+    echo -e "Mode: ${BLUE}UPDATE${NC}"
+fi
 echo "Target: $TARGET_DIR"
 echo ""
 
@@ -65,10 +77,19 @@ mkdir -p "$TARGET_DIR"
 
 # Check if CLAUDE.md exists
 if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
-    echo -e "${YELLOW}Warning: CLAUDE.md already exists.${NC}"
-    echo "Saving Keeper Lite CLAUDE.md as CLAUDE.keeper-lite.md"
-    echo "You may want to merge them manually."
-    CLAUDE_TARGET="$TARGET_DIR/CLAUDE.keeper-lite.md"
+    if [ "$UPDATE_MODE" = true ]; then
+        echo -e "${YELLOW}Update mode: Backing up existing CLAUDE.md${NC}"
+        cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.backup"
+        echo "  Backup saved to CLAUDE.md.backup"
+        CLAUDE_TARGET="$TARGET_DIR/CLAUDE.md"
+    else
+        echo -e "${YELLOW}Warning: CLAUDE.md already exists.${NC}"
+        echo "Saving Keeper Lite CLAUDE.md as CLAUDE.keeper-lite.md"
+        echo "You may want to merge them manually."
+        echo ""
+        echo -e "Tip: Use ${BLUE}--update${NC} to overwrite (creates backup)"
+        CLAUDE_TARGET="$TARGET_DIR/CLAUDE.keeper-lite.md"
+    fi
 else
     CLAUDE_TARGET="$TARGET_DIR/CLAUDE.md"
 fi
