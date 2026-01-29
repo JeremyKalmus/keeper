@@ -32,23 +32,40 @@ Otherwise, treat $ARGUMENTS as the feature description.
 
 Note the feature description - you'll pass this to the sub-agent.
 
-## Step 4: Launch Seed Analysis Sub-Agent
+## Step 4: Determine Next Decision ID
 
-**CRITICAL**: Use a sub-agent to analyze seeds. This keeps full seed content
-out of your context - you only receive the relevant patterns.
+```bash
+ls .keeper/decisions/ 2>/dev/null | grep -E '^[0-9]+' | sort -n | tail -1
+```
+
+Calculate the next ID (e.g., if last was 002, next is 003).
+Create a slug from the feature name (e.g., "user-profile-editing").
+
+## Step 5: Launch Keeper Review Sub-Agent
+
+**CRITICAL**: The sub-agent does ALL the work:
+1. Reads all seed files
+2. Analyzes the feature
+3. **Writes the decision file directly**
+4. Returns only a brief summary
+
+You just read the result and report to the user.
 
 ```
 Use Task tool with subagent_type="general-purpose" and prompt:
 
-"You are a Keeper seed analysis agent. Your job is to find RELEVANT patterns
-for a specific feature and apply the Keeper decision matrices.
+"You are a Keeper review agent. Your job is to analyze a feature against
+the seed vault and WRITE the keeper_decision file directly.
 
 FEATURE TO ANALYZE:
 <paste the feature description here>
 
 KEEPER MODE: <mode from config.json>
+DECISION ID: <next ID, e.g., 003>
+DECISION FILE: .keeper/decisions/<ID>-<slug>.md
 
 TASK:
+
 1. Read ALL seed files:
    - .keeper/seeds/frontend.yaml
    - .keeper/seeds/backend.yaml
@@ -61,7 +78,7 @@ TASK:
    - Data types/enums required
    - Auth patterns required
 
-3. For EACH need, check the seeds and apply the Four Questions:
+3. For EACH need, apply the Four Questions:
    Q1: What already exists? (check seeds)
    Q2: Is it sufficient? (does it cover the use case?)
    Q3: If not, what's the smallest extension?
@@ -87,178 +104,106 @@ TASK:
    - Auth pattern exists? → Use it (else BLOCK)
    - New permission? → Add scope (reject new roles)
 
-5. Return a STRUCTURED RESPONSE with ONLY:
+5. Determine status: approved | rejected | deferred
 
-```yaml
-analysis:
-  feature: '<feature name>'
-  mode: <seeding|growth|conservation>
+6. WRITE the decision file to: .keeper/decisions/<ID>-<slug>.md
 
-  reuse:
-    frontend:
-      - name: <component>
-        location: <path>
-        reason: '<why this fits>'
-    backend:
-      - name: <route/service>
-        location: <path>
-        reason: '<why this fits>'
-    data:
-      - name: <type/enum>
-        location: <path>
-        reason: '<why this fits>'
+   Use this format:
 
-  extensions:
-    frontend:
-      - component: <name>
-        extension: '<what to add>'
-        justification: '<why extend vs create>'
-    backend:
-      - route: <path>
-        extension: '<what to add>'
-    data:
-      - type: <name>
-        extension: '<what to add>'
+   ```markdown
+   # Keeper Decision: <ID> - <Feature Name>
 
-  new_seeds_required:
-    - type: <component|route|enum|service|type>
-      name: <proposed name>
-      justification: '<why nothing existing works>'
+   **Date**: <today's date YYYY-MM-DD>
+   **Status**: APPROVED | REJECTED | DEFERRED
+   **Mode**: <mode>
+   **Feature**: <feature description>
 
-  forbidden:
-    - '<pattern that must NOT be used>'
+   ## Summary
 
-  recommendation: approved|rejected|deferred
-  rationale: '<1-2 sentence explanation>'
-```
+   <1-2 sentence summary of decision>
+
+   ## Reuse (existing patterns to use)
+
+   ### Frontend
+   - <component>: <why it fits>
+
+   ### Backend
+   - <route/service>: <why it fits>
+
+   ### Data
+   - <type/enum>: <why it fits>
+
+   ## Extensions (approved modifications)
+
+   - <component/route>: <what to add>
+
+   ## New Seeds (if any)
+
+   - <name>: <justification why nothing existing works>
+
+   ## Forbidden
+
+   - <pattern that must NOT be used>
+
+   ## Constraints
+
+   - <specific implementation constraint>
+
+   ---
+
+   ## keeper_decision (machine-readable)
+
+   ```yaml
+   keeper_decision:
+     id: <ID>
+     date: <YYYY-MM-DD>
+     feature: '<feature>'
+     mode: <mode>
+     status: <approved|rejected|deferred>
+     reuse:
+       frontend: [<components>]
+       backend: [<routes/services>]
+       data: [<types/enums>]
+     extensions:
+       - target: <component/route>
+         add: <what to add>
+     new_seeds:
+       - type: <component|route|enum|type>
+         name: <name>
+         justification: <why>
+     forbidden:
+       - <pattern>
+     rationale: |
+       <explanation>
+   ```
+   ```
+
+7. Return ONLY a brief summary:
+   'Decision <ID> written to .keeper/decisions/<ID>-<slug>.md
+    Status: APPROVED|REJECTED|DEFERRED
+    Reuse: N patterns, Extensions: N, New seeds: N, Forbidden: N'
 
 IMPORTANT:
-- Return ONLY the yaml block above - no extra commentary
-- Include ONLY patterns relevant to this specific feature
-- Do NOT include the full seed file contents
-- Be conservative: prefer reuse over extension, extension over creation"
+- WRITE the decision file directly - do not return full content
+- Be conservative: prefer reuse > extension > creation
+- Include ONLY patterns relevant to this feature"
 ```
 
-## Step 5: Process Sub-Agent Response
+## Step 6: Read and Report the Decision
 
-The sub-agent returns a structured analysis with only relevant patterns.
-Use this to generate the final keeper_decision.
+The sub-agent wrote the decision file. Now:
 
-## Step 6: Generate keeper_decision
+1. **Read the decision file** the sub-agent created
+2. **Extract key info** for the user (status, reuse count, forbidden patterns)
+3. **Report** a concise summary
 
-Determine the next decision ID:
-```bash
-ls .keeper/decisions/ 2>/dev/null | grep -E '^[0-9]+' | sort -n | tail -1
-```
-
-Create the decision in YAML format:
-
-```yaml
-keeper_decision:
-  id: NNN
-  date: YYYY-MM-DD
-  feature: "<feature name>"
-  mode: <seeding|growth|conservation>
-  status: <approved|rejected|deferred>
-
-  reuse:
-    frontend:
-      - <existing components to use>
-    backend:
-      - <existing routes/services to use>
-    data:
-      - <existing types/enums to use>
-
-  extensions:
-    frontend:
-      <component>:
-        add_variant: "<new variant>"
-    backend:
-      <route>:
-        add_field: "<new field>"
-
-  new_seeds:
-    - type: <component|route|enum|service|type>
-      name: <seed name>
-      scope: <where it applies>
-      justification: <why this cannot reuse existing>
-
-  forbidden:
-    - <patterns explicitly prohibited>
-
-  constraints:
-    - <specific implementation constraints>
-
-  rationale: |
-    <brief explanation of decision>
-```
-
-## Step 8: Save the Decision
-
-Write to `.keeper/decisions/NNN-<feature-slug>.md`:
-
-```markdown
-# Keeper Decision: NNN - <Feature Name>
-
-**Date**: YYYY-MM-DD
-**Status**: APPROVED | REJECTED | DEFERRED
-**Mode**: seeding | growth | conservation
-
-## Summary
-
-<One paragraph summary of the decision>
-
-## Reuse Requirements
-
-### Frontend
-- <component>: Use existing, variant <X>
-
-### Backend
-- <route>: Extend with <field>
-
-### Data
-- <type>: Use existing
-
-## Approved Extensions
-
-<List of approved extensions with specifics>
-
-## New Seeds (if any)
-
-<List of approved new seeds with justification>
-
-## Forbidden Patterns
-
-- <pattern 1>
-- <pattern 2>
-
-## Constraints
-
-- <constraint 1>
-- <constraint 2>
-
-## Rationale
-
-<Detailed explanation of decision>
-
----
-
-## keeper_decision (machine-readable)
-
-\`\`\`yaml
-<the full keeper_decision YAML>
-\`\`\`
-```
-
-## Step 9: Report to User
-
-Output:
+Output format:
 
 ```
 KEEPER DECISION: [APPROVED|REJECTED|DEFERRED]
 
 Feature: <feature name>
-Mode: <mode>
+Decision: .keeper/decisions/<ID>-<slug>.md
 
 Summary:
   Reuse: N existing patterns
@@ -266,29 +211,17 @@ Summary:
   New Seeds: N approved
   Forbidden: N patterns
 
-Decision saved: .keeper/decisions/NNN-<slug>.md
-
 [If APPROVED]
-You may proceed with implementation. Key constraints:
-- REUSE: <list key components>
-- FORBIDDEN: <list forbidden patterns>
-- EXTENSIONS: <list approved extensions>
+You may proceed. Key constraints from the decision:
+- REUSE: <list key components to use>
+- FORBIDDEN: <list patterns to avoid>
 
 [If REJECTED]
-Rejection reasons:
-- <reason 1>
-- <reason 2>
-
-Suggestions:
-- <how to modify the proposal to get approval>
+See decision file for details and suggestions.
 ```
 
-## Critical Rules
+## Important
 
-- **Prefer reuse over extension**
-- **Prefer extension over creation**
-- **Reject if uncertain**
-- You may approve NOTHING if existing patterns suffice
-- A pattern must appear twice as an extension before promotion to new seed
-- NEVER approve parallel implementations
-- NEVER approve speculative abstractions
+- The **sub-agent does all the heavy lifting** (reads seeds, analyzes, writes decision)
+- You only **read the result and report** to keep your context clean
+- The decision file is the source of truth - direct the user to read it for details
