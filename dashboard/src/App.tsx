@@ -30,7 +30,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load initial data
+  // Load initial data - fetch ALL vaults for accurate counts
   useEffect(() => {
     async function loadData() {
       try {
@@ -45,15 +45,23 @@ export default function App() {
         setVaultList(vaults)
         setDecisions(decisionList)
 
-        // Load first vault content and select first seed
+        // Load ALL vault contents in parallel for accurate sidebar counts
         if (vaults.length > 0) {
+          const vaultContentsArray = await Promise.all(
+            vaults.map(v => fetchVault(v.name))
+          )
+
+          const allContents: Record<string, VaultContent> = {}
+          vaultContentsArray.forEach(vc => {
+            allContents[vc.name] = vc
+          })
+          setVaultContents(allContents)
+
+          // Select first vault and first seed
           const firstVault = vaults[0].name
-          const content = await fetchVault(firstVault)
-          setVaultContents({ [firstVault]: content })
           setSelectedVault(firstVault)
 
-          // Select first seed
-          const seeds = getSeedsFromVault(content.content)
+          const seeds = getSeedsFromVault(allContents[firstVault].content)
           if (seeds.length > 0) {
             setSelectedSeed(seeds[0])
           }
