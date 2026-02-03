@@ -3,72 +3,72 @@
 # Keeper uses this to enforce REST consistency and service boundaries
 
 api_routes:
-  # Example route entry:
-  # METHOD /path/:param:
-  #   purpose: "What this endpoint does"
-  #   auth_required: true|false
-  #   scopes: [list, of, required, scopes]  # if auth_required
+  # Dashboard API routes - discovered by keeper-plant
 
-  POST /auth/login:
-    purpose: "User authentication"
+  GET /api/health:  # discovered
+    purpose: "Health check endpoint"
     auth_required: false
+    returns: "{ status: 'ok', timestamp: ISO8601 }"
 
-  POST /auth/logout:
-    purpose: "Session termination"
-    auth_required: true
-    scopes: []
-
-  POST /auth/refresh:
-    purpose: "Token refresh"
+  GET /api/vaults:  # discovered
+    purpose: "List all available seed vaults"
     auth_required: false
+    returns: "{ vaults: [{ name, file }] }"
 
-  GET /users/:id:
-    purpose: "User profile retrieval"
-    auth_required: true
-    scopes: [user:read]
+  GET /api/vault/:name:  # discovered
+    purpose: "Get specific vault content parsed from YAML"
+    auth_required: false
+    returns: "{ name, content }"
 
-  PATCH /users/:id:
-    purpose: "User profile update"
-    auth_required: true
-    scopes: [user:write]
+  GET /api/decisions:  # discovered
+    purpose: "List all decisions with summaries"
+    auth_required: false
+    returns: "{ decisions: [{ id, file, summary }] }"
 
-  GET /users:
-    purpose: "User list with pagination"
-    auth_required: true
-    scopes: [admin:read]
+  GET /api/decision/:id:  # discovered
+    purpose: "Get specific decision content parsed from YAML"
+    auth_required: false
+    returns: "{ id, content }"
+
+  GET /api/events:  # discovered
+    purpose: "Server-Sent Events endpoint for real-time updates"
+    auth_required: false
+    content_type: "text/event-stream"
+    events:
+      - connected: "Initial connection confirmation"
+      - vault-updated: "{ file } when seed vault YAML changes"
+      - decision-updated: "{ file } when decision YAML changes"
 
 services:
-  # Example service entry:
-  # ServiceName:
-  #   responsibilities:
-  #     - list of things this service owns
-  #   forbidden:
-  #     - list of things this service must NOT do
-
-  AuthService:
+  YAMLParsingService:  # discovered
     responsibilities:
-      - token issuance
-      - token validation
-      - token refresh
-      - session management
+      - parse YAML files to JavaScript objects
+      - list YAML files in directory
+      - handle parse errors gracefully
     forbidden:
-      - user creation
-      - password storage (delegate to CredentialService)
+      - caching parsed content (always fresh read)
+      - modifying YAML files
 
-  UserService:
+  FileWatcherService:  # discovered
     responsibilities:
-      - user CRUD operations
-      - profile management
-      - user preferences
+      - watch seeds/ directory for changes
+      - watch decisions/ directory for changes
+      - broadcast SSE events on file changes
     forbidden:
-      - authentication logic
-      - authorization decisions
+      - watching non-YAML files
+      - recursive directory watching
 
-  CredentialService:
+  SSEBroadcastService:  # discovered
     responsibilities:
-      - password hashing
-      - password verification
-      - credential storage
+      - manage connected SSE clients
+      - broadcast events to all clients
+      - cleanup disconnected clients
     forbidden:
-      - token operations
-      - session management
+      - client-specific messages (broadcast only)
+      - message persistence
+
+cors:  # discovered
+  allowed_origins: ["*"]
+  allowed_methods: ["GET", "OPTIONS"]
+  allowed_headers: ["Content-Type"]
+  notes: "Permissive for local dev - restrict in production"

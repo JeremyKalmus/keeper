@@ -2,51 +2,64 @@
 # Machine-readable registry of test patterns
 # Keeper uses this to enforce consistency in test infrastructure
 
-test_fixtures:
-  # Example fixture entry:
-  # FixtureName:
-  #   location: path/to/fixture.ts
-  #   creates: "What entity/data this fixture produces"
-  #   variants: [list, of, variants]
-  #   when_to_use: "Description of appropriate usage"
+test_framework:
+  name: none  # discovered - no tests configured yet
+  config_location: null
+  notes: "Dashboard is tracer bullet MVP - tests to be added"
 
-  # Add your fixtures here after discovery with /keeper-plant
-  # Example:
-  # UserFixture:
-  #   location: tests/fixtures/user.ts
-  #   creates: "User entity with sensible defaults"
-  #   variants: [admin, regular, guest]
-  #   when_to_use: "Any test requiring a user object"
+recommended_setup:  # discovered - recommendation based on stack
+  framework: vitest
+  reasons:
+    - Native Vite integration
+    - Fast execution with Bun
+    - React Testing Library compatible
+  packages_to_add:
+    - vitest
+    - "@testing-library/react"
+    - "@testing-library/jest-dom"
+    - "@testing-library/user-event"
 
-mock_services:
-  # Example mock entry:
-  # MockServiceName:
-  #   location: path/to/mock.ts
-  #   mocks: "ServiceName it replaces"
-  #   default_behavior: "What it returns by default"
-  #   when_to_use: "When to use this mock vs real service"
+test_fixtures: {}  # discovered - none exist yet
 
-  # Add your mocks here after discovery with /keeper-plant
-  # Example:
-  # MockAuthService:
-  #   location: tests/mocks/auth.ts
-  #   mocks: AuthService
-  #   default_behavior: "Returns valid authenticated user"
-  #   when_to_use: "Tests not specifically testing auth"
+mock_services: {}  # discovered - none exist yet
 
-test_utilities:
-  # Example utility entry:
-  # utility_name:
-  #   location: path/to/util.ts
-  #   purpose: "What this utility does"
-  #   forbidden_alternatives:
-  #     - things not to do instead
+test_utilities: {}  # discovered - none exist yet
 
-  # Add your test utilities here after discovery with /keeper-plant
+coverage_config: null  # discovered - not configured
 
-coverage_config:
-  # Coverage requirements and configuration
-  # threshold: 80
-  # exclude:
-  #   - "**/*.test.ts"
-  #   - "**/mocks/**"
+# Recommended test structure when tests are added
+recommended_structure:
+  unit_tests:
+    priority: high
+    location: "src/**/*.test.ts"
+    targets:
+      - useRealtimeUpdates: "SSE connection state management"
+      - getSeedsFromVault: "Vault content parsing"
+      - getSeedFromVault: "Individual seed extraction"
+      - parseYamlFile: "YAML parsing with error handling"
+      - listYamlFiles: "File discovery filtering"
+
+  component_tests:
+    priority: medium
+    location: "src/components/**/*.test.tsx"
+    targets:
+      - Sidebar: "Vault expansion, seed selection"
+      - SeedDetail: "Conditional section rendering"
+      - DecisionLog: "Expand/collapse behavior"
+      - TabButton: "Active state styling"
+
+  integration_tests:
+    priority: low
+    location: "tests/integration/**/*.test.ts"
+    targets:
+      - API endpoints: "Response shapes and status codes"
+      - SSE events: "Event broadcasting on file changes"
+      - File watchers: "Change detection accuracy"
+
+  e2e_tests:
+    priority: future
+    location: "tests/e2e/**/*.test.ts"
+    targets:
+      - Navigation flow: "Vault > Seed > Detail"
+      - Real-time updates: "File change reflected in UI"
+      - Tab switching: "Seeds <-> Decisions"

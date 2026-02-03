@@ -3,42 +3,92 @@
 # Keeper uses this to enforce reuse before extension
 
 components:
-  # Example component entry:
-  # ComponentName:
-  #   variants: [list, of, approved, variants]
-  #   location: path/to/Component.tsx
-  #   when_to_use: "Description of appropriate usage"
-  #   forbidden_extensions:
-  #     - list of prohibited modifications
+  # Dashboard components - discovered by keeper-plant
 
-  Button:
-    variants: [primary, secondary, danger]
-    location: src/ui/Button.tsx
-    when_to_use: "Any clickable action"
+  Sidebar:  # discovered
+    variants: [default]
+    location: dashboard/src/components/Sidebar.tsx
+    when_to_use: "Left sidebar navigation for browsing seed vaults and individual seeds"
+    props: [vaults, selectedVault, selectedSeed, onSelectVault, onSelectSeed, getSeeds]
     forbidden_extensions:
-      - custom colors outside design system
-      - inline styles
+      - horizontal layout
+      - non-collapsible sections
 
-  Input:
-    variants: [text, password, email, number]
-    location: src/ui/Input.tsx
-    when_to_use: "User text entry"
+  SeedDetail:  # discovered
+    variants: [default]
+    location: dashboard/src/components/SeedDetail.tsx
+    when_to_use: "Display detailed information about a selected seed with conditional sections"
+    props: [name, vault, data]
     forbidden_extensions:
-      - uncontrolled inputs
-      - custom validation UI
+      - inline editing (until edit mode implemented)
+      - custom section types without icon
 
-  Modal:
-    variants: [dialog, drawer, fullscreen]
-    location: src/ui/Modal.tsx
-    when_to_use: "Blocking user decisions requiring focus"
+  DecisionLog:  # discovered
+    variants: [default]
+    location: dashboard/src/components/DecisionLog.tsx
+    when_to_use: "Display a list of architectural decisions with expandable details"
+    props: [decisions]
     forbidden_extensions:
-      - nested modals
-      - auto-dismiss without user action
+      - filtering without search UI
+      - non-chronological ordering
 
-  Card:
-    variants: [default, elevated, outlined]
-    location: src/ui/Card.tsx
-    when_to_use: "Contained content grouping"
+  TabButton:  # discovered
+    variants: [active, inactive]
+    location: dashboard/src/App.tsx
+    when_to_use: "Tab navigation buttons in header for switching views"
+    props: [active, onClick, children]
     forbidden_extensions:
-      - custom border styles
-      - mixed variant nesting
+      - icons without text
+      - more than 4 tabs
+
+  EmptyState:  # discovered
+    variants: [default]
+    location: dashboard/src/App.tsx
+    when_to_use: "Display centered message when no content selected"
+    props: [message]
+    forbidden_extensions:
+      - action buttons (use separate CTA component)
+
+  # Icon components - discovered
+  Icons:  # discovered
+    variants: [LocationIcon, InfoIcon, GridIcon, CheckIcon, ShieldIcon, ForbiddenIcon, CodeIcon]
+    location: dashboard/src/components/SeedDetail.tsx
+    when_to_use: "SVG icons for section headers, accepts className prop"
+    forbidden_extensions:
+      - inline color values (use currentColor)
+      - sizes other than w-4 h-4 without variant
+
+hooks:
+  useRealtimeUpdates:  # discovered
+    location: dashboard/src/hooks/useRealtimeUpdates.ts
+    purpose: "Manages SSE connection state for live updates from server"
+    returns: "{ connected: boolean, lastUpdate: Date | null, lastEvent: unknown | null }"
+    forbidden_extensions:
+      - polling fallback (SSE only)
+      - manual reconnect without backoff
+
+design_tokens:
+  colors:  # discovered
+    seed:
+      primary: "#4ade80"
+      dim: "#22c55e"
+      range: [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+    slate:
+      surface: "#1a1d24"
+      background: "#0f1115"
+      border: "#2d3139"
+      extended: [850, 925, 950]
+
+  fonts:  # discovered
+    sans: ["Inter", "system-ui", "sans-serif"]
+    mono: ["JetBrains Mono", "Fira Code", "monospace"]
+
+  animations:  # discovered
+    pulse-soft:
+      duration: "2s"
+      use_for: "Live connection indicator"
+    fade-in:
+      duration: "0.2s"
+      use_for: "Dynamic content entrance"
+
+theme_mode: dark  # discovered - no light mode

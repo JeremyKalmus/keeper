@@ -1,66 +1,72 @@
 # Data Seed Registry
-# Machine-readable registry of approved enums and table schemas
-# Keeper uses this to enforce schema consistency and safe migrations
+# Machine-readable registry of types and data shapes
+# Keeper uses this to enforce schema consistency
 
-enums:
-  # Example enum entry:
-  # enum_name:
-  #   values: [list, of, allowed, values]
-  #   extension_policy: append-only|frozen|controlled
-  #   scope: global|table:tablename
+types:
+  Tab:  # discovered
+    location: dashboard/src/App.tsx
+    definition: "'seeds' | 'decisions'"
+    usage: "Controls main tab switching"
 
-  user_status:
-    values: [active, suspended, deleted]
-    extension_policy: append-only
-    scope: global
+  RealtimeState:  # discovered
+    location: dashboard/src/hooks/useRealtimeUpdates.ts
+    fields:
+      - connected: boolean
+      - lastUpdate: Date | null
+      - lastEvent: unknown | null
+    usage: "SSE connection state tracking"
 
-  role_type:
-    values: [admin, user, guest]
-    extension_policy: controlled
-    scope: global
+  SidebarProps:  # discovered
+    location: dashboard/src/components/Sidebar.tsx
+    fields:
+      - vaults: string[]
+      - selectedVault: string | null
+      - selectedSeed: string | null
+      - onSelectVault: "(vault: string | null) => void"
+      - onSelectSeed: "(seed: string | null) => void"
+      - getSeeds: "(vault: string) => string[]"
 
-  audit_action:
-    values: [create, read, update, delete]
-    extension_policy: frozen
-    scope: table:audit_logs
+  SeedDetailProps:  # discovered
+    location: dashboard/src/components/SeedDetail.tsx
+    fields:
+      - name: string
+      - vault: string
+      - data: unknown
 
-  notification_channel:
-    values: [email, sms, push]
-    extension_policy: append-only
-    scope: table:notifications
+  Decision:  # discovered
+    location: dashboard/src/components/DecisionLog.tsx
+    fields:
+      - id: string
+      - summary: string | null
 
-tables:
-  # Example table entry:
-  # table_name:
-  #   primary_key: column_name
-  #   enum_fields:
-  #     - field_name: enum_name
-  #   indexes: [list, of, indexed, columns]
-  #   constraints: [list of constraint descriptions]
+api_responses:
+  VaultListResponse:  # discovered
+    shape: "{ vaults: Array<{ name: string, file: string }> }"
+    endpoint: "GET /api/vaults"
 
-  users:
-    primary_key: id
-    enum_fields:
-      - status: user_status
-      - role: role_type
-    indexes: [email, created_at]
-    constraints:
-      - email must be unique
-      - soft delete only (status -> deleted)
+  VaultDetailResponse:  # discovered
+    shape: "{ name: string, content: object }"
+    endpoint: "GET /api/vault/:name"
 
-  audit_logs:
-    primary_key: id
-    enum_fields:
-      - action: audit_action
-    indexes: [user_id, created_at, action]
-    constraints:
-      - immutable after creation
-      - retention: 90 days
+  DecisionListResponse:  # discovered
+    shape: "{ decisions: Array<{ id: string, file: string, summary: string | null }> }"
+    endpoint: "GET /api/decisions"
 
-  notifications:
-    primary_key: id
-    enum_fields:
-      - channel: notification_channel
-    indexes: [user_id, sent_at, channel]
-    constraints:
-      - cascade delete with user
+  DecisionDetailResponse:  # discovered
+    shape: "{ id: string, content: object }"
+    endpoint: "GET /api/decision/:id"
+
+sse_events:
+  connected:  # discovered
+    shape: "{ type: 'connected' }"
+  vault-updated:  # discovered
+    shape: "{ type: 'vault-updated', payload: { file: string } }"
+  decision-updated:  # discovered
+    shape: "{ type: 'decision-updated', payload: { file: string } }"
+
+yaml_parsing:
+  library: yaml  # discovered
+  version: "^2.3.4"
+  functions:
+    parseYamlFile: "async (filepath: string) => Promise<unknown>"
+    listYamlFiles: "async (dir: string) => Promise<string[]>"
