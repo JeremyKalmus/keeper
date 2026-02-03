@@ -148,6 +148,82 @@ without context overflow.
 3. **Set `forbidden_extensions`** for each component
 4. **Add `when_to_use`** descriptions for clarity
 
+## Keeper Dashboard
+
+A Storybook-like UI for browsing your seed vaults and decisions.
+
+![Dashboard Preview](dashboard/preview.png)
+
+### Features
+
+- **Browse Seeds**: Navigate all 6 seed vaults with collapsible sections
+- **Live Previews**: Interactive component previews for frontend seeds
+- **Decision Log**: View all Keeper decisions with expandable details
+- **Real-time Updates**: Auto-refreshes when YAML files change (via SSE)
+- **Dark Theme**: Clean "Digital Greenhouse" aesthetic
+
+### Install Dashboard
+
+```bash
+# For projects that have run /keeper-plant:
+curl -fsSL https://raw.githubusercontent.com/JeremyKalmus/keeper/main/dashboard/setup.sh | bash
+
+# Then start it:
+cd dashboard
+bun install
+bun run dev
+
+# Open http://localhost:5173
+```
+
+### Update Dashboard
+
+```bash
+# Pull latest while preserving your customizations:
+cd dashboard
+./update.sh
+```
+
+### Add Component Previews
+
+Edit `dashboard/src/components/ComponentPreview.tsx` to add live previews of your project's components:
+
+```tsx
+// Import your component
+import { YourButton } from '../../src/components/YourButton'
+
+// Add a case in the switch statement:
+case 'YourButton':
+  return (
+    <PreviewWrapper>
+      <YourButton variant="primary" onClick={() => {}}>
+        Click me
+      </YourButton>
+    </PreviewWrapper>
+  )
+```
+
+### Dashboard Structure
+
+```
+dashboard/
+├── server/index.ts       # Bun server (port 3333)
+│   ├── GET /api/vaults       # List all seed vaults
+│   ├── GET /api/vault/:name  # Get vault contents
+│   ├── GET /api/decisions    # List decisions
+│   └── SSE /api/events       # Real-time file changes
+├── src/
+│   ├── components/
+│   │   ├── Sidebar.tsx           # Vault navigation
+│   │   ├── SeedDetail.tsx        # Seed display
+│   │   ├── DecisionLog.tsx       # Decision history
+│   │   └── ComponentPreview.tsx  # Live previews (customize this!)
+│   └── hooks/
+│       └── useRealtimeUpdates.ts # SSE subscription
+├── setup.sh              # Install script
+└── update.sh             # Update script
+```
+
 ## Mayor Integration
 
 **IMPORTANT**: The Mayor must run `/keeper-review` before creating beads for any feature work.
